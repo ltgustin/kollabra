@@ -1,0 +1,15 @@
+Project Overview: NFT Collection Collaboration Tool
+Purpose: A platform connecting up-and-coming NFT collections with artists, developers, marketers, and promoters.
+Functionality:
+- Users can create profiles.
+- Users can list their skills and specify what they are looking for.
+- Project showcase feature for displaying past work.
+- Rating system for collaborations to build trust.
+Technical Stack
+Framework: Next.js 15 (using src/app structure for routing)
+Authentication: Firebase for X/Twitter authentication
+Database: Firebase for user data and real-time updates
+UI Libraries
+@chakra-ui/react: For accessible and customizable UI components.
+@emotion/react and @emotion/styled: For styling components with CSS-in-JS.
+framer-motion: For animations and transitions in React.
