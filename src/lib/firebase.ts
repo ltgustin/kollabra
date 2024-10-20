@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -15,7 +15,29 @@ const firebaseConfig = {
 initializeApp(firebaseConfig);
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-const auth = getAuth(app);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
 
-export { db, auth };
+export const checkUserInDatabase = async (uid: string) => {
+    const userDoc = doc(db, 'users', uid);
+    const docSnapshot = await getDoc(userDoc);
+    return docSnapshot.exists(); // Returns true if the user exists
+};
+
+interface UserProfile {
+    id: string;
+    displayName: string;
+    onboarded: boolean;
+    createdAt: Date;
+}
+
+export const createUserProfile = async (uid: string, displayName: string): Promise<void> => {
+    const userDoc = doc(db, 'users', uid);
+    const userProfile: UserProfile = {
+        id: uid,
+        displayName,
+        onboarded: true,
+        createdAt: new Date(),
+    };
+    await setDoc(userDoc, userProfile);
+};

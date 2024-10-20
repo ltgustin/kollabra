@@ -1,12 +1,41 @@
 "use client"; 
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { checkUserInDatabase, createUserProfile } from '../../lib/firebase'; // Import Firebase functions
 import styles from './Dashboard.module.scss';
+import OnboardingModal from '../../components/OnboardingModal';
 
 export default function DashboardPage() {
-    // const userData = useUserData(userId); // Call the hook with the userId
-
     const { user, loading } = useAuth();
+    const [isOnboarding, setIsOnboarding] = useState(false);
+
+    console.log(user);
+
+    useEffect(() => {
+        const checkUser = async () => {
+            if (user) {
+                const userExists = await checkUserInDatabase(user.uid); // Check if user exists
+
+                console.log('EXIST CHECK: '+userExists);
+
+                if (!userExists) {
+                    console.log('DOES NOT!');
+                    setIsOnboarding(true);
+                }
+            }
+        };
+        checkUser();
+    }, [user]);
+
+    const handleOnboardingComplete = async () => {
+        // create user profile
+        await createUserProfile(user.uid, user.displayName);
+        // Close the onboarding modal
+        setIsOnboarding(false);
+        // Redirect to the user's profile page
+        window.location.href = `/profile/${user.displayName}`; 
+    };
 
     if (loading) {
         return <div>Loading...</div>; // Show a loading indicator
@@ -24,6 +53,13 @@ export default function DashboardPage() {
                 </div>
             ) : (
                 <p>Loading user data...</p>
+            )}
+            { isOnboarding && (
+                <OnboardingModal 
+                    open={isOnboarding}
+                    onComplete={handleOnboardingComplete} 
+                    onClose={() => setIsOnboarding(false)}
+                />
             )}
         </div>
     );
