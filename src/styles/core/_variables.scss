@@ -1,0 +1,23 @@
+:root {
+    --color_primary: #4F26AD;
+    --color_black: #1B0157;
+    --color_gray: #D9D2EA;
+    --color_white: #ffffff;
+}
+
+$sm: 769px;
+$md: 1200px;
+$lg: 1500px;
+
+$padding: 3rem;
+
+$primary: var(--color_primary);
+$black: var(--color_black);
+$white: var(--color_white);
+$gray: var(--color_gray);
+$grey: $gray;
+
+$font: 'Arial', sans-serif;
+
+$regular: 400;
+$bold: 700;

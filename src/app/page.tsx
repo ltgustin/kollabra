@@ -1,4 +1,5 @@
-import { Button, Container, Typography } from '@mui/material'; import Link from 'next/link';
+import { Button, Container, Typography } from '@mui/material'; 
+import Link from 'next/link';
 
 export default function Home() {
   return (

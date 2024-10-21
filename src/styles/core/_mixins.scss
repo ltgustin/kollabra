@@ -1,0 +1,16 @@
+//.example {font-size: rem(14px);}
+@function rem($size) {
+    $remSize: calc($size/10);
+    @return #{$remSize}rem;
+}
+
+@function clam($sizeAtMin, $sizeAtMax, $minw: 32rem, $maxw: 140rem) {
+
+    $slope: (
+        $sizeAtMax - $sizeAtMin) / ($maxw - $minw
+    );
+
+    $y-axis-intersection: -1 * $minw * $slope + $sizeAtMin;
+    $return-value: clamp(#{$sizeAtMin}, #{$y-axis-intersection} + #{$slope} * 100vw, #{$sizeAtMax});
+    @return $return-value;
+}

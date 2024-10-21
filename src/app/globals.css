@@ -1,13 +1,6 @@
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-black: #1B0157;
 }
 
 html,
@@ -17,7 +10,7 @@ body {
 }
 
 body {
-  color: var(--foreground);
+  color: var(--color-black);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;

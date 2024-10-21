@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { checkUserInDatabase, createUserProfile } from '../../lib/firebase'; // Import Firebase functions
 import styles from './Dashboard.module.scss';
+import Link from 'next/link';
 import OnboardingModal from '../../components/OnboardingModal';
 
 export default function DashboardPage() {
@@ -50,6 +51,7 @@ export default function DashboardPage() {
                     {user.photoURL && 
                         <img className={styles["avatar"]} src={user.photoURL} alt={user.displayName} />
                     }
+                    <Link href={`/profile/${user.displayName}`}>View Profile</Link>
                 </div>
             ) : (
                 <p>Loading user data...</p>

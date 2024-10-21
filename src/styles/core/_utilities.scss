@@ -1,0 +1,172 @@
+%container {
+    max-width: $lg;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    padding: 0 $padding;
+}
+
+.container {
+    @extend %container;
+}
+
+%btn {
+    color: $black;
+    font-size: rem(20);
+    border-bottom: 5px solid $primary;
+    outline: 0;
+    font-weight: $bold;
+    align-self: flex-start;
+    text-decoration: none;
+    transition: all 350ms ease-in-out;
+
+    &:hover,
+    &:focus {
+        border-color: $black;
+    }
+}
+
+.btn {
+    @extend %btn;
+}
+
+.img-wrap {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+
+    img,
+    figure {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate3d(-50%, -50%, 0) scale(1);
+        object-fit: cover;
+        width: 100%;
+        height: 100% !important;
+        transition: all 350ms ease-in-out;
+    }
+
+    &.hover:hover,
+    &.hover:focus {
+        img {
+            transform: translate3d(-50%, -50%, 0) scale(1.05);
+        }
+    }
+}
+
+.gap {
+    gap: clam(3rem, 5rem);
+}
+
+.p-relative {
+    position: relative;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.w-50 {
+    width: 50%;
+}
+
+.w-auto-sm {
+    @media(min-width:$sm) {
+        width: auto !important;
+    }
+}
+
+.w-auto-md {
+    @media(min-width:$md) {
+        width: auto !important;
+    }
+}
+
+.d-flex {
+    display: flex !important;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.flex-wrap-sm {
+    @media(min-width:$sm) {
+        flex-wrap: nowrap !important;
+    }
+}
+
+.flex-wrap-md {
+    @media(min-width:$md) {
+        flex-wrap: nowrap !important;
+    }
+}
+
+.f-j-center {
+    justify-content: center;
+}
+
+.f-j-sb {
+    justify-content: space-between;
+}
+
+.f-a-center {
+    align-items: center;
+}
+
+.c-primary {
+    color: $primary;
+}
+
+.c-white {
+    color: white;
+}
+
+.c-black {
+    color: $black;
+}
+
+$auto: auto;
+$directions: 't', 'b', 'l', 'r';
+$mcss-property-map: (
+    't': margin-top,
+    'b': margin-bottom,
+    'l': margin-left,
+    'r': margin-right
+);
+$pcss-property-map: (
+    't': padding-top,
+    'b': padding-bottom,
+    'l': padding-left,
+    'r': padding-right
+);
+
+$sizes: 0, 5, 10, 20, 30, 40, 50, 60, 100, $auto;
+
+@each $direction in $directions {
+
+    @each $size in $sizes {
+        .m#{$direction}-#{$size} {
+            @if $size ==$auto {
+                #{map-get($mcss-property-map, $direction)}: $auto;
+            }
+
+            @else {
+                #{map-get($mcss-property-map, $direction)}: #{$size}px;
+            }
+
+        }
+
+        .p#{$direction}-#{$size} {
+            @if $size ==$auto {
+                #{map-get($pcss-property-map, $direction)}: $auto;
+            }
+
+            @else {
+                #{map-get($pcss-property-map, $direction)}: #{$size}px;
+            }
+        }
+    }
+}
