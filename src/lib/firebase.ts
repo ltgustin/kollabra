@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, where } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -29,14 +29,18 @@ interface UserProfile {
     displayName: string;
     onboarded: boolean;
     createdAt: Date;
+    type: string;
+    profilePhoto: string;
 }
 
-export const createUserProfile = async (uid: string, displayName: string): Promise<void> => {
+export const createUserProfile = async (uid: string, displayName: string, accountType: string, profilePhoto: string): Promise<void> => {
     const userDoc = doc(db, 'users', uid);
     const userProfile: UserProfile = {
         id: uid,
         displayName,
         onboarded: true,
+        type: accountType,
+        profilePhoto: profilePhoto,
         createdAt: new Date(),
     };
     await setDoc(userDoc, userProfile);

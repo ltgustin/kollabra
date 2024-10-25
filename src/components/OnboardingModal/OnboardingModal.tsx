@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react'; // Added useState import
+
 import { Modal, Box, Typography, Button } from '@mui/material';
 import styles from './OnboardingModal.module.scss';
 
@@ -9,6 +10,8 @@ interface OnboardingModalProps {
 }
 
 const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete, open, onClose }) => {
+    const [accountType, setAccountType] = useState<string>('');
+
     return (
         <Modal
             open={open}
@@ -21,14 +24,39 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete, open, onC
                 <Typography sx={{ mt: 2 }}>
                     This is some random text to guide you through the onboarding process.
                 </Typography>
+                
+                <div className={styles["account-type-radio"]}>
+                    <label>
+                        <input
+                            type="radio"
+                            name="account_type"
+                            value="Company"
+                            checked={accountType === 'Company'}
+                            onChange={() => setAccountType('Company')}
+                        />
+                        Company
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            name="account_type"
+                            value="Creative"
+                            checked={accountType === 'Creative'}
+                            onChange={() => setAccountType('Creative')}
+                        />
+                        Creative
+                    </label>
+                </div>
+
                 <Button
                     variant="contained"
                     color="primary"
                     onClick={() => {
-                        onComplete();
+                        onComplete(accountType);
                         onClose();
                     }}
                     sx={{ mt: 2 }}
+                    disabled={!accountType}
                 >
                     Complete Onboarding
                 </Button>

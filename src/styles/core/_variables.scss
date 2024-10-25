@@ -1,8 +1,21 @@
 :root {
     --color_primary: #4F26AD;
+    --color_secondary:#CE1EB3;
     --color_black: #1B0157;
     --color_gray: #D9D2EA;
     --color_white: #ffffff;
+
+    --font-weight-regular:400;
+    --font-weight-bold:700;
+    --font-weight-black:900;
+
+    --font-family:'PT Sans',sans-serif;
+    --font-family-title:'Passion One',sans-serif;
+
+    --mui-palette-primary-main: #4F26AD;
+    --mui-palette-primary-dark:#1B0157;
+    --mui-palette-secondary-main:#CE1EB3;
+    --mui-palette-common-black:#1B0157;
 }
 
 $sm: 769px;
@@ -12,12 +25,14 @@ $lg: 1500px;
 $padding: 3rem;
 
 $primary: var(--color_primary);
+$secondary: var(--color_secondary);
 $black: var(--color_black);
 $white: var(--color_white);
 $gray: var(--color_gray);
 $grey: $gray;
 
-$font: 'Arial', sans-serif;
+$font: var(--font-family);
 
-$regular: 400;
-$bold: 700;
+$regular: var(--font-weight-regular);
+$bold: var(--font-weight-bold);
+$fblack: var(--font-weight-black);

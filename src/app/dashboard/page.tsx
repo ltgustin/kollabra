@@ -1,20 +1,23 @@
 "use client"; 
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { checkUserInDatabase, createUserProfile } from '../../lib/firebase'; // Import Firebase functions
 import styles from './Dashboard.module.scss';
 import Link from 'next/link';
 import OnboardingModal from '../../components/OnboardingModal';
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
     const { user, loading } = useAuth();
+    const router = useRouter();
     const [isOnboarding, setIsOnboarding] = useState(false);
 
     console.log(user);
 
     useEffect(() => {
         const checkUser = async () => {
+            if (loading) return; // Wait until loading is complete
             if (user) {
                 const userExists = await checkUserInDatabase(user.uid); // Check if user exists
 
@@ -24,18 +27,20 @@ export default function DashboardPage() {
                     console.log('DOES NOT!');
                     setIsOnboarding(true);
                 }
+            } else {
+                router.push('/signin');
             }
         };
         checkUser();
-    }, [user]);
+    }, [user, loading]); // Added loading to the dependency array
 
-    const handleOnboardingComplete = async () => {
-        // create user profile
-        await createUserProfile(user.uid, user.displayName);
+    const handleOnboardingComplete = async (accountType) => {
+        // create user profile with account type
+        await createUserProfile(user?.uid, user?.displayName, accountType, user?.photoURL);
         // Close the onboarding modal
         setIsOnboarding(false);
         // Redirect to the user's profile page
-        window.location.href = `/profile/${user.displayName}`; 
+        window.location.href = `/profile/${user?.displayName}`; 
     };
 
     if (loading) {
@@ -46,12 +51,8 @@ export default function DashboardPage() {
         <div className={styles["dashboard-container"]}>
             <h1>Welcome to the Dashboard!</h1>
             {user ? (
-                <div className={styles["user-box"]}>
-                    <h2>{user.displayName}</h2>
-                    {user.photoURL && 
-                        <img className={styles["avatar"]} src={user.photoURL} alt={user.displayName} />
-                    }
-                    <Link href={`/profile/${user.displayName}`}>View Profile</Link>
+                <div>
+                    USER LOGGED IN!
                 </div>
             ) : (
                 <p>Loading user data...</p>

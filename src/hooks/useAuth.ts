@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; // Import Firebase User type
 import { auth } from '../lib/firebase';
 
@@ -14,24 +13,17 @@ interface User extends FirebaseUser {
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null); // Use your User type here
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user as User); // Cast to User type
             setLoading(false);
-
-            if (!loading) {
-                if (user) {
-                    router.push("/dashboard");
-                } else {
-                    router.push("/signin");
-                }
-            }
+            setIsAuthenticated(!!user);
         });
 
         return () => unsubscribe();
-    }, [loading, router]);
+    }, []);
 
-    return { user, loading };
+    return { user, loading, isAuthenticated };
 }

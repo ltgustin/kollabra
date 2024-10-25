@@ -1,14 +1,10 @@
 'use client';
 
 import SignIn from '@/components/SignIn';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const SignInPage = () => {
-    const { loading } = useAuth();
-
-    if (loading) {
-        return <div>Loading...</div>; // Show a loading indicator
-    }
+    useAuthRedirect("/dashboard");
 
     return (
         <div>
