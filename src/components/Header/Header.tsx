@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Logo from '@/assets/logo.svg';
-import { Button, Avatar, Popover, Button as MuiButton } from '@mui/material';
+import { Button, Avatar, Button as MuiButton, Menu, MenuItem, IconButton, Tooltip, Typography, Box } from '@mui/material';
 import styles from './Header.module.scss';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -12,19 +12,19 @@ import { useUserProfile } from '@/hooks/UserProfileContext';
 export default function Header() {
     const userProfile = useUserProfile();
     const { user, isAuthenticated } = useAuth();
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null); 
+    const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null); 
 
-    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget); // Set anchor for Popover
+    const handleOpenUserMenu = (event) => {
+        setAnchorElUser(event.currentTarget);
     };
 
-    const handleClose = () => {
-        setAnchorEl(null); // Close Popover
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
     };
 
-    console.log(userProfile);
-
-    const open = Boolean(anchorEl); // Determine if Popup is open
+    const handleSignOut = () => {
+        alert('SIGNED OUT');
+    }
 
     return (
         <header className={`${styles.header} container d-flex f-j-sb`}>
@@ -35,40 +35,62 @@ export default function Header() {
             {isAuthenticated ? (
                 <div className={styles.headerAvatarWrap}>
 
-                    <Link href="/dashboard" className={styles.navLink}>
-                        Find Creative Jobs
-                    </Link>
 
                     {userProfile?.profilePhoto &&
-                        <MuiButton 
-                            onClick={handleClick}
-                            className={styles.headerAvatar} 
-                        >
-                            <Avatar src={userProfile?.profilePhoto} alt={userProfile?.displayName} className={styles["avatar"]} />
-                        </MuiButton>
-                    }
-                    <Popover
-                        open={open}
-                        anchorEl={anchorEl}
-                        onClose={handleClose}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'center',
-                        }}
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'center',
-                        }}
-                    >
-                        <div className="profile-name">{userProfile?.displayName}</div>
-                        <MuiButton 
-                            component={Link} 
-                            href={`/profile/${userProfile?.displayName}`} 
-                            onClick={handleClose}
-                        >
-                            Edit Profile
-                        </MuiButton>
-                    </Popover>
+                        <Box sx={{ flexGrow: 0 }}>
+                            <Link href="/dashboard" className={styles.navLink}>
+                                Find Creative Jobs
+                            </Link>
+                            
+                            <Tooltip title="Open settings">
+                                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                                    <Avatar alt={userProfile?.displayName} src={userProfile?.profilePhoto} />
+                                </IconButton>
+                            </Tooltip>
+                            <Menu
+                                sx={{ mt: '45px' }}
+                                id="menu-appbar"
+                                anchorEl={anchorElUser}
+                                anchorOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                keepMounted
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                open={Boolean(anchorElUser)}
+                                onClose={handleCloseUserMenu}
+                            >
+                                <MenuItem 
+                                    component={Link} 
+                                    href={`/profile/${userProfile?.displayName}`}
+                                    onClick={handleCloseUserMenu}
+                                >
+                                    <Typography
+                                        sx={{ textAlign: 'center' }}
+                                    >Profile</Typography>
+                                </MenuItem>
+
+                                <MenuItem 
+                                    component={Link} 
+                                    href="/dashboard"
+                                    onClick={handleCloseUserMenu}
+                                >
+                                    <Typography
+                                        sx={{ textAlign: 'center' }}
+                                    >Dashboard</Typography>
+                                </MenuItem>
+
+                                <MenuItem onClick={handleSignOut}>
+                                    <Typography 
+                                        sx={{ textAlign: 'center' }}
+                                    >Signout</Typography>
+                                </MenuItem>
+                            </Menu>
+                        </Box>
+                    }  
                 </div>
             ) : (
                 <Link href="/signin" passHref>
