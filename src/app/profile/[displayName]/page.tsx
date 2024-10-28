@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { db, auth, storage } from '@/lib/firebase';
-import { Avatar, Button, Typography, Box, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Skeleton, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, Chip } from '@mui/material'; 
+import { useDropzone } from 'react-dropzone';
+import { Avatar, Button, Typography, Box, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Skeleton, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, Chip, ImageListItem, ImageList, IconButton, Tooltip } from '@mui/material'; 
+
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -24,7 +28,6 @@ interface PortfolioItem {
     brand: string;
     description: string;
     link: string;
-    imageUrl?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -45,12 +48,14 @@ const ProfilePage = ({ params }: ProfileProps) => {
         brand: '', 
         description: '', 
         link: '', 
-        imageUrl: ''
     });
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
     const categoriesList = [
         { value: 'branding', label: 'Branding' },
@@ -99,6 +104,11 @@ const ProfilePage = ({ params }: ProfileProps) => {
         fetchData();
     }, [displayName, router]);
 
+    const handleCreateNewItem = () => {
+        setEditingItem(null); // Clear fields
+        setIsPopupOpen(true); // Open the dialog
+    };
+
     // CREATING
     const createPortfolioItem = async (itemData: PortfolioItem) => {
         if (user) {
@@ -116,9 +126,10 @@ const ProfilePage = ({ params }: ProfileProps) => {
                 brand: itemToEdit.brand,
                 description: itemToEdit.description,
                 link: itemToEdit.link,
-                imageUrl: itemToEdit.imageUrl,
             });
             setSelectedCategories(itemToEdit.categories || []);
+            // Ensure selectedImages includes both the file and name
+            setSelectedImages(itemToEdit.imageUrls.map(url => ({ file: null, name: getPrettyFileName(url) })) || []); // Adjusted to include name
             setEditingItem(itemToEdit); // Set the item being edited
             setIsPopupOpen(true); // Open the dialog
         }
@@ -141,6 +152,19 @@ const ProfilePage = ({ params }: ProfileProps) => {
         }
     };
 
+    const confirmDelete = (id: string) => {
+        setItemToDelete(id);
+        setDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (itemToDelete) {
+            await deletePortfolioItem(itemToDelete);
+            setDeleteConfirmOpen(false);
+            setItemToDelete(null);
+        }
+    };
+
     // INPUT CHANGE FOR PORTFOLIO FORM
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -148,19 +172,43 @@ const ProfilePage = ({ params }: ProfileProps) => {
     };
 
     // IMAGE UPLOAD
-    const uploadImages = async (images: File[]) => {
+    const uploadImages = async (image: { file: File; name: string }) => {
         const imageUrls = [];
         const storageRef = ref(storage);
+        const imageRef = ref(storageRef, `portfolio/${image.file.name}`);
 
-        for (const image of images) {
-            const imageRef = ref(storageRef, `portfolio/${image.name}`);
-            await uploadBytes(imageRef, image);
+        // Check if the image is valid before uploading
+        if (image.file && image.file.size > 0) {
+            await uploadBytes(imageRef, image.file); // Use the file object directly
             const url = await getDownloadURL(imageRef);
             imageUrls.push(url);
+        } else {
+            console.error('Invalid image file:', image.file);
         }
 
         return imageUrls; // Return the array of image URLs
     };
+
+    const onDrop = (acceptedFiles: File[]) => {
+        if (acceptedFiles.length > 0) {
+            const file = acceptedFiles[0]; // Only take the first file
+            console.log(`File: ${file.name}, Type: ${file.type}, Size: ${file.size}`);
+            setSelectedImages([{ file, name: file.name }]); // Store the single file
+        } else {
+            alert(`You can only upload one image.`);
+        }
+    };
+
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        accept: { 'image/jpeg': [], 'image/png': [], 'image/gif': [] },
+        multiple: false, // Allow only one file
+    });
+
+    const handleImageDelete = (fileToDelete: File) => {
+        setSelectedImages((prevFiles) => prevFiles.filter((file) => file !== fileToDelete));
+    };
+
 
     // SUBMIT FOR PORTFOLIO FORM
     const handleSubmit = async (e) => {
@@ -173,7 +221,6 @@ const ProfilePage = ({ params }: ProfileProps) => {
             description: newItem.description,
             link: newItem.link,
             categories: selectedCategories,
-            imageUrl: newItem.imageUrl,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -181,8 +228,11 @@ const ProfilePage = ({ params }: ProfileProps) => {
         try {
             let imageUrls = [];
             if (selectedImages.length > 0) {
-                imageUrls = await uploadImages(selectedImages); // Upload images and get URLs
-                portfolioData.imageUrls = imageUrls; // Add image URLs to portfolio data
+                const validImage = selectedImages[0]; // Get the single image
+                if (validImage.file) {
+                    imageUrls = await uploadImages(validImage); // Upload the image and get URL
+                    portfolioData.imageUrls = imageUrls; // Add image URLs to portfolio data
+                }
             }
 
             if (editingItem) {
@@ -207,7 +257,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
             setSnackbarOpen(true);
 
             // Reset form and close popup
-            setNewItem({ title: '', brand: '', description: '', link: '', imageUrl: '' });
+            setNewItem({ title: '', brand: '', description: '', link: '' });
             setSelectedCategories([]);
             setSelectedImages([]); // Reset selected images
             setEditingItem(null); // Reset editing item
@@ -227,6 +277,47 @@ const ProfilePage = ({ params }: ProfileProps) => {
     //     return <div>Loading...</div>;
     // }
     
+    const handleDialogClose = () => {
+        // Reset form fields when closing the dialog
+        setNewItem({ title: '', brand: '', description: '', link: '' });
+        setSelectedCategories([]);
+        setSelectedImages([]);
+        setEditingItem(null);
+        setIsPopupOpen(false);
+    };
+
+    useEffect(() => {
+        if (isPopupOpen) {
+            if (editingItem) {
+                // Prefill fields with the editing item data
+                setNewItem({
+                    title: editingItem.title,
+                    brand: editingItem.brand,
+                    description: editingItem.description,
+                    link: editingItem.link,
+                });
+                setSelectedCategories(editingItem.categories || []);
+            } else {
+                // Reset form fields when creating a new item
+                setNewItem({ title: '', brand: '', description: '', link: '' });
+                setSelectedCategories([]);
+                setSelectedImages([]);
+            }
+        }
+    }, [isPopupOpen, editingItem]);
+
+    // Function to extract and format the file name
+    const getPrettyFileName = (url: string): string => {
+        if (!url) return 'Unknown File'; // Handle undefined or empty URL
+
+        const parts = url.split('/'); // Split the URL by '/'
+        const fileNameWithExtension = parts[parts.length - 1]; // Get the last part of the URL
+        const fileName = fileNameWithExtension.split('.')[0]; // Remove the extension
+        const cleanFileName = decodeURIComponent(fileName); // Decode any URL-encoded characters
+        
+        return cleanFileName.replace(/^portfolio\//, '');
+    };
+
     return (
         <>
             <Container className={`${styles.profileHeader} container d-flex f-j-sb`}>
@@ -260,7 +351,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
             </Container>
 
             {canEditProfile() && (
-                <Button onClick={() => setIsPopupOpen(true)}>Create New Portfolio</Button>
+                <Button onClick={handleCreateNewItem}>Create New Portfolio</Button>
             )}
 
             <Container className={`${styles.profilePortfolio} container`}>
@@ -273,31 +364,44 @@ const ProfilePage = ({ params }: ProfileProps) => {
                     </>
                 ) : (
                     portfolioItems.length > 0 ? (
-                        portfolioItems.map(item => (
-                            <Box key={item.id} className={styles.portfolioItem}>
-                                <Typography variant="h5">{item.title}</Typography>
-                                <Typography variant="body2">{item.description}</Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, marginTop: 1 }}>
-                                    {item.categories && item.categories.map((category) => (
-                                        <Chip key={category} label={category} />
-                                    ))}
-                                </Box>
+                        <ImageList className={styles.portfolioGrid} variant="masonry" cols={3} gap={8}>
+                            {portfolioItems.map(item => (
+                                <ImageListItem className={styles.portfolioItem} key={item.id}>
+                                    <Box> {/* Added Box to wrap the contents */}
+                                        <img
+                                            srcSet={`${item.imageUrls[0]}?w=248&fit=crop&auto=format&dpr=2 2x`}
+                                            src={`${item.imageUrls[0]}?w=248&fit=crop&auto=format`}
+                                            alt={item.title}
+                                            loading="lazy"
+                                        />
+                                        <Box className={styles.portfolioItemInfo}>
+                                            <h2>{item.title}</h2>
+                                            <p>{item.description}</p>
+                                            <div className="cats">
+                                                {item.categories && item.categories.map((category) => (
+                                                    <Chip key={category} label={category} />
+                                                ))}
+                                            </div>
+                                        </Box>
 
-                                <Box sx={{ display: 'flex', flexWrap: 'nowrap', flexDirection: 'row', marginTop: 2 }}>
-                                    {item.imageUrls && item.imageUrls.map((url, index) => (
-                                        <img key={index} src={url} alt={`Portfolio item ${item.title} - Image ${index + 1}`} style={{ width: '100%', height: 'auto', marginBottom: '10px' }} />
-                                    ))}
-                                </Box>
-
-                                {canEditProfile() && (
-                                    <>
-                                        {/* {item.imageUrl && <img src={item.imageUrl} alt={item.title} />} */}
-                                        <Button onClick={() => editPortfolioItem(item.id)}>Edit</Button>
-                                        <Button onClick={() => deletePortfolioItem(item.id)}>Delete</Button>
-                                    </>
-                                )}
-                            </Box>
-                        ))
+                                        {canEditProfile() && (
+                                            <Box className={styles.actionButtons}>
+                                                <Tooltip title="Edit">
+                                                    <IconButton onClick={() => editPortfolioItem(item.id)}>
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete">
+                                                    <IconButton onClick={() => confirmDelete(item.id)}>
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        )}
+                                    </Box> {/* Closing Box here */}
+                                </ImageListItem>
+                            ))}
+                        </ImageList>
                     ) : (
                         <Typography variant="body1">No portfolio items found.</Typography>
                     )
@@ -305,118 +409,122 @@ const ProfilePage = ({ params }: ProfileProps) => {
             </Container>
 
             {canEditProfile() && (
-                <Dialog open={isPopupOpen} onClose={() => setIsPopupOpen(false)}>
+                <Dialog 
+                    className={styles.portfolioEditDialog} 
+                    open={isPopupOpen} 
+                    onClose={handleDialogClose}
+                    maxWidth="lg"
+                >
                     <DialogTitle>{editingItem ? 'Edit Portfolio Item' : 'Create Portfolio Item'}</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            margin="dense"
-                            name="title"
-                            label="Project Title"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={newItem.title}
-                            onChange={handleInputChange}
-                            required
-                        />
-                        <TextField
-                            margin="dense"
-                            name="brand"
-                            label="Brand / Company / NFT Project"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={newItem.brand}
-                            onChange={handleInputChange}
-                            required
-                        />
-                        <TextField
-                            margin="dense"
-                            name="description"
-                            label="Description"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            multiline
-                            rows={5}
-                            value={newItem.description}
-                            onChange={handleInputChange}
-                            required
-                        />
-                        <TextField
-                            margin="dense"
-                            name="link"
-                            label="Link (optional)"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={newItem.link}
-                            onChange={handleInputChange}
-                        />
-                        <FormControl fullWidth>
-                            <InputLabel id="categories-label">Categories (choose at least one)</InputLabel>
+                    <DialogContent className={styles.dialogFlex}>
+                        <div className={styles.dialogColumn}>
+                            <TextField
+                                margin="dense"
+                                name="title"
+                                label="Project Title"
+                                type="text"
+                                fullWidth
+                                variant="outlined"
+                                value={newItem.title}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <TextField
+                                margin="dense"
+                                name="brand"
+                                label="Brand / Company / NFT Project"
+                                type="text"
+                                fullWidth
+                                variant="outlined"
+                                value={newItem.brand}
+                                onChange={handleInputChange}
+                                required
+                            />
 
-                            <ToggleButtonGroup
-                                value={selectedCategories}
-                                onChange={(event, newCategories) => {
-                                    if (newCategories.length) {
-                                        setSelectedCategories(newCategories);
-                                    }
-                                }}
-                                aria-label="categories"
-                                color="primary"
-                                sx={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: 1,
-                                }}
-                            >
-                                {categoriesList.map(category => (
-                                    <ToggleButton
-                                        key={category.value}
-                                        value={category.value}
-                                        sx={{
-                                            borderColor: 'purple',
-                                            color: selectedCategories.includes(category.value) ? 'white' : 'purple',
-                                            backgroundColor: selectedCategories.includes(category.value) ? 'purple' : 'transparent',
-                                            '&:hover': { backgroundColor: 'rgba(128, 0, 128, 0.1)' },
-                                            textTransform: 'none',
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {category.label}
-                                    </ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
-                        </FormControl>
-                        <TextField
-                            margin="dense"
-                            name="imageUrl"
-                            label="Image URL"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={newItem.imageUrl}
-                            onChange={handleInputChange}
-                        />
+                            <TextField
+                                margin="dense"
+                                name="description"
+                                label="Description"
+                                type="text"
+                                fullWidth
+                                variant="outlined"
+                                multiline
+                                rows={5}
+                                value={newItem.description}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <TextField
+                                margin="dense"
+                                name="link"
+                                label="Link (optional)"
+                                type="text"
+                                fullWidth
+                                variant="outlined"
+                                value={newItem.link}
+                                onChange={handleInputChange}
+                            />
+                            <FormControl fullWidth>
+                                <InputLabel id="categories-label">Categories (choose at least one)</InputLabel>
 
-                        <input
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            id="upload-images"
-                            multiple
-                            type="file"
-                            onChange={(e) => {
-                                if (e.target.files) {
-                                    setSelectedImages(Array.from(e.target.files)); // Convert FileList to Array
-                                }
-                            }}
-                        />
-                        <label htmlFor="upload-images">
-                            <Button variant="contained" component="span">
-                                Upload Images
-                            </Button>
-                        </label>
+                                <ToggleButtonGroup
+                                    value={selectedCategories}
+                                    onChange={(event, newCategories) => {
+                                        if (newCategories.length) {
+                                            setSelectedCategories(newCategories);
+                                        }
+                                    }}
+                                    aria-label="categories"
+                                    color="primary"
+                                    sx={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: 1,
+                                    }}
+                                >
+                                    {categoriesList.map(category => (
+                                        <ToggleButton
+                                            key={category.value}
+                                            value={category.value}
+                                            sx={{
+                                                borderColor: 'purple',
+                                                color: selectedCategories.includes(category.value) ? 'white' : 'purple',
+                                                backgroundColor: selectedCategories.includes(category.value) ? 'purple' : 'transparent',
+                                                '&:hover': { backgroundColor: 'rgba(128, 0, 128, 0.1)' },
+                                                textTransform: 'none',
+                                                fontWeight: 'bold',
+                                            }}
+                                        >
+                                            {category.label}
+                                        </ToggleButton>
+                                    ))}
+                                </ToggleButtonGroup>
+                            </FormControl>
+                        </div>
+                        
+                        <div className={styles.dialogColumn}>
+                            <Box className={styles.uploadField}>
+                                <Box className={styles.upload} {...getRootProps()}>
+                                    <input {...getInputProps()} />
+                                    <Typography variant="h6">Upload Media</Typography>
+                                    <Typography variant="body2" color="textSecondary">
+                                        Max five (5) images <br />
+                                        Restricted to jpg, png, gif formats
+                                    </Typography>
+                                </Box>
+
+                                <Box mt={2}>
+                                    {selectedImages.map((url, index) => (
+                                        <Chip
+                                            key={index}
+                                            label={url.name}
+                                            onDelete={() => handleImageDelete(url)}
+                                            sx={{ marginRight: 1, marginBottom: 1 }}
+                                        />
+                                    ))}
+                                </Box>
+                            </Box>
+                        </div>
 
                     </DialogContent>
                     <DialogActions>
@@ -429,6 +537,14 @@ const ProfilePage = ({ params }: ProfileProps) => {
                     </DialogActions>
                 </Dialog>
             )}
+
+            <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+                <DialogTitle>Are you sure you want to delete this item?</DialogTitle>
+                <DialogActions>
+                    <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+                    <Button onClick={handleDeleteConfirm} color="secondary">Delete</Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbarOpen}

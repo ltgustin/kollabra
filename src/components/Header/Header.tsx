@@ -41,7 +41,6 @@ export default function Header() {
                             <Link href="/dashboard" className={styles.navLink}>
                                 Find Creative Jobs
                             </Link>
-                            
                             <Tooltip title="Open settings">
                                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                                     <Avatar alt={userProfile?.displayName} src={userProfile?.profilePhoto} />

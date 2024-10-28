@@ -1,3 +1,49 @@
 .profileHeader {
     margin-bottom:4rem;
 }
+
+.portfolioGrid {
+
+}
+
+.dialogFlex {
+    display:flex;
+    gap:2rem;
+}
+
+.dialogColumn {
+    width:100%;
+}
+
+.uploadField {
+    .upload {
+        border:2px dashed #ccc;
+        padding:2rem;
+        border-radius:2rem;
+        text-align:center;
+        cursor:pointer;
+    }
+}
+
+.portfolioItemInfo {
+    position:absolute;
+    left:0;
+    bottom:0;
+    display:flex;
+}
+
+.portfolioItem {
+    img {
+        width: 100%;
+    }
+}
+
+.actionButtons {
+    position: absolute;
+    right:0rem;
+    top:0rem;
+    background:rgba(white,0.8);
+    padding:5px;
+    gap:5px;
+    display:flex;
+}
