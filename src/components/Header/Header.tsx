@@ -11,7 +11,7 @@ import { useUserProfile } from '@/hooks/UserProfileContext';
 
 export default function Header() {
     const userProfile = useUserProfile();
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, signOut } = useAuth();
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null); 
 
     const handleOpenUserMenu = (event) => {
@@ -23,7 +23,7 @@ export default function Header() {
     };
 
     const handleSignOut = () => {
-        alert('SIGNED OUT');
+        signOut();
     }
 
     return (
@@ -37,7 +37,7 @@ export default function Header() {
 
 
                     {userProfile?.profilePhoto &&
-                        <Box sx={{ flexGrow: 0 }}>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 0 }}>
                             <Link href="/dashboard" className={styles.navLink}>
                                 Find Creative Jobs
                             </Link>
@@ -64,7 +64,7 @@ export default function Header() {
                             >
                                 <MenuItem 
                                     component={Link} 
-                                    href={`/profile/${userProfile?.displayName}`}
+                                    href={`/profile/${userProfile?.slug}`}
                                     onClick={handleCloseUserMenu}
                                 >
                                     <Typography

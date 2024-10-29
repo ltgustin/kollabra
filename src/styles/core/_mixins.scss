@@ -1,10 +1,10 @@
 //.example {font-size: rem(14px);}
 @function rem($size) {
-    $remSize: calc($size/10);
+    $remSize: calc($size/16);
     @return #{$remSize}rem;
 }
 
-@function clam($sizeAtMin, $sizeAtMax, $minw: 32rem, $maxw: 140rem) {
+@function clam($sizeAtMin, $sizeAtMax, $minw: 20rem, $maxw: 87.5rem) {
 
     $slope: (
         $sizeAtMax - $sizeAtMin) / ($maxw - $minw

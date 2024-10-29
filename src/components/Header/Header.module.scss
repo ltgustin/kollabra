@@ -7,3 +7,14 @@
     padding:0;
     min-width:auto;
 }
+
+.navLink {
+    font-size:1.15rem;
+    font-weight:var(--font-weight-bold);
+    transition:color 400ms ease-in-out;
+
+    &:hover,
+    &:focus {
+        color:var(--color_primary);
+    }
+}

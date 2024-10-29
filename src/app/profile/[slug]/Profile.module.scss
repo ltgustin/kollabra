@@ -33,6 +33,9 @@
 }
 
 .portfolioItem {
+    border-radius:1.2rem;
+    overflow:hidden;
+
     img {
         width: 100%;
     }
@@ -40,10 +43,18 @@
 
 .actionButtons {
     position: absolute;
+    padding:5px;
     right:0rem;
     top:0rem;
-    background:rgba(white,0.8);
-    padding:5px;
     gap:5px;
     display:flex;
+
+    button {
+        background:rgba(white,0.65);
+
+        &:hover,
+        &:focus {
+            background:white;
+        }
+    }
 }

@@ -1,12 +1,42 @@
 .MuiButton-root {
-    font-size:2rem;
+    font-size:clam(1.15rem,1.25rem);
     letter-spacing:0;
-    min-width:12rem;
+    min-width:rem(120);
     text-transform:capitalize;
     border-radius:22px;
     font-weight:var(--font-weight-bold);
     font-family:var(--font-family);
-    padding:0.4rem 2.2rem;
+    padding:0.4rem 1.6rem;
+    box-shadow:none;
+
+    &:hover,
+    &:focus {
+        box-shadow:none;
+    }
+
+    &.large {
+        font-size: clam(1.3rem, 1.5rem);
+    }
+
+    &.tertiary {
+        background:#F8E6F5;
+        color:var(--color_black);
+
+        &:hover,
+        &:focus {
+            background:#F0DBED;
+        }
+    }
+
+    &.small {
+        padding:0.15rem 1.25rem;
+        font-size: rem(15);
+    }
+
+    &.edit-profile {
+        align-self:flex-start;
+        margin-top:0.5rem;
+    }
 }
 
 .MuiTypography-root {
@@ -15,8 +45,20 @@
     letter-spacing:0;
 
     &.MuiTypography-h1 {
-        font-size:clam(5rem, 8.5rem);
+        font-size:clam(4.5rem, 5.3125rem);
         font-family:var(--font-family-title);
+    }
+
+    &.MuiTypography-h2 {
+        color:var(--color_black);
+        font-size:clam(1.6rem,2rem);
+        font-weight:var(--font-weight-bold);
+    }
+
+    &.MuiTypography-h5 {
+        color: var(--color_black);
+        font-size: clam(1.2rem, 1.375rem);
+        font-style:italic;
     }
 }
 

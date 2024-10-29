@@ -8,6 +8,8 @@ import { db, auth, storage } from '@/lib/firebase';
 import { useDropzone } from 'react-dropzone';
 import { Avatar, Button, Typography, Box, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Skeleton, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, Chip, ImageListItem, ImageList, IconButton, Tooltip } from '@mui/material'; 
 
+import { useUserProfile } from '@/hooks/UserProfileContext';
+
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -17,7 +19,7 @@ import styles from './Profile.module.scss';
 
 interface ProfileProps {
     params: {
-        displayName: string;
+        slug: string;
     };
 }
 
@@ -34,7 +36,8 @@ interface PortfolioItem {
 
 const ProfilePage = ({ params }: ProfileProps) => {
     const { user } = useAuth();
-    const { displayName } = params;
+    const { slug } = params;
+    const displayName = useUserProfile?.displayName;
     const [userProfile, setUserProfile] = useState<any>(null);
     const router = useRouter();
     const [loading, setLoading] = useState(true);
@@ -57,6 +60,13 @@ const ProfilePage = ({ params }: ProfileProps) => {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
+    const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = useState(false); // State for Edit Profile dialog
+    const [editProfileData, setEditProfileData] = useState({ // State for Edit Profile form data
+        displayName: userProfile?.displayName || '',
+        twitterLink: userProfile?.twitterLink || '',
+        websiteLink: userProfile?.websiteLink || '',
+    });
+
     const categoriesList = [
         { value: 'branding', label: 'Branding' },
         { value: 'graphic-design', label: 'Graphic Design' },
@@ -74,7 +84,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
             try {
                 // Fetch user profile
                 const usersRef = collection(db, 'users');
-                const userQuery = query(usersRef, where('displayName', '==', displayName));
+                const userQuery = query(usersRef, where('slug', '==', slug));
                 const userSnapshot = await getDocs(userQuery);
 
                 if (!userSnapshot.empty) {
@@ -85,7 +95,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
 
                 // Fetch portfolio items
                 const portfolioRef = collection(db, 'portfolio');
-                const portfolioQuery = query(portfolioRef, where('userId', '==', displayName));
+                const portfolioQuery = query(portfolioRef, where('userId', '==', slug));
                 const portfolioSnapshot = await getDocs(portfolioQuery);
 
                 const items = portfolioSnapshot.docs.map(doc => ({
@@ -102,7 +112,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
         };
 
         fetchData();
-    }, [displayName, router]);
+    }, [slug, router]);
 
     const handleCreateNewItem = () => {
         setEditingItem(null); // Clear fields
@@ -138,10 +148,8 @@ const ProfilePage = ({ params }: ProfileProps) => {
     // DELETING
     const deletePortfolioItem = async (portfolioItemId: string) => {
         if (portfolioItemId) { // Check if id is valid
-            await deleteDoc(doc(db, 'portfolio', portfolioItemId)); // Use portfolioItemId for deletion
-            console.log('DELETED: ' + portfolioItemId);
+            await deleteDoc(doc(db, 'portfolio', portfolioItemId));
             
-            // Optionally, remove the item from local state
             setPortfolioItems(prevItems => prevItems.filter(item => item.id !== portfolioItemId));
 
             // snackbar
@@ -192,7 +200,6 @@ const ProfilePage = ({ params }: ProfileProps) => {
     const onDrop = (acceptedFiles: File[]) => {
         if (acceptedFiles.length > 0) {
             const file = acceptedFiles[0]; // Only take the first file
-            console.log(`File: ${file.name}, Type: ${file.type}, Size: ${file.size}`);
             setSelectedImages([{ file, name: file.name }]); // Store the single file
         } else {
             alert(`You can only upload one image.`);
@@ -270,12 +277,12 @@ const ProfilePage = ({ params }: ProfileProps) => {
     }
 
     const canEditProfile = () => {
-        return user && user.displayName === displayName;
+        return user && user?.reloadUserInfo.screenName === slug;
     };
     
     // if (!userProfile) {
-    //     return <div>Loading...</div>;
-    // }
+        //     return <div>Loading...</div>;
+        // }
     
     const handleDialogClose = () => {
         // Reset form fields when closing the dialog
@@ -318,6 +325,37 @@ const ProfilePage = ({ params }: ProfileProps) => {
         return cleanFileName.replace(/^portfolio\//, '');
     };
 
+    // Function to handle input changes for Edit Profile form
+    const handleEditProfileInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditProfileData(prevState => ({ ...prevState, [name]: value }));
+    };
+
+    const handleEditProfileSave = async () => {
+        if (user) {
+            const updatedProfileData = {
+                ...userProfile,
+                displayName: editProfileData.displayName,
+                twitterLink: editProfileData.twitterLink,
+                websiteLink: editProfileData.websiteLink,
+            };
+            // Update user profile in the database
+            await updateDoc(doc(db, 'users', user.uid), updatedProfileData);
+            setUserProfile(updatedProfileData); // Update local state
+            setIsEditProfilePopupOpen(false); // Close the dialog
+        }
+    };
+
+    useEffect(() => {
+        if (userProfile) {
+            setEditProfileData({
+                displayName: userProfile.displayName || '',
+                twitterLink: userProfile.twitterLink || '',
+                websiteLink: userProfile.websiteLink || '',
+            });
+        }
+    }, [userProfile]); // Update editProfileData whenever userProfile changes
+
     return (
         <>
             <Container className={`${styles.profileHeader} container d-flex f-j-sb`}>
@@ -326,33 +364,51 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         <Avatar sx={{ width: 72, height: 72 }} />
                     </Skeleton>
                 ) : (
-                    <Box display="flex" alignItems="center" gap={2}>
-                        <Avatar
-                            alt={userProfile.displayName}
-                            src={userProfile?.profilePhoto}
-                            sx={{ width: 72, height: 72 }}
-                        />
-                        <Box>
-                            <Typography variant="h3" fontWeight="bold" color="primary">{userProfile.displayName}</Typography>
-                            <Typography variant="body1" color="textSecondary">{userProfile.type}</Typography>
+                    <Box 
+                        display="flex" 
+                        alignItems="center" 
+                        justifyContent="space-between" 
+                        gap={2}
+                        sx={{ width: '100%' }}
+                    >
+                        <Box display="flex" alignItems="center" gap={2}>
+                            <Avatar
+                                alt={userProfile.displayName}
+                                src={userProfile?.profilePhoto}
+                                sx={{ width: 72, height: 72 }}
+                            />
+                            <Box>
+                                <Typography variant="h2" fontWeight="bold" color="primary">{userProfile.displayName}</Typography>
+                                <Typography variant="h5" color="textSecondary">{userProfile.type}</Typography>
+                            </Box>
+                            {canEditProfile() && (
+                                <Button
+                                    variant="contained"
+                                    className="tertiary small edit-profile"
+                                    onClick={() => {
+                                        setIsEditProfilePopupOpen(true);
+                                        setEditProfileData({
+                                            displayName: userProfile?.displayName || '',
+                                            twitterLink: userProfile?.twitterLink || '',
+                                            websiteLink: userProfile?.websiteLink || '',
+                                        });
+                                    }}
+                                >
+                                    Edit Profile
+                                </Button>
+                            )}
                         </Box>
+
                         {canEditProfile() && (
                             <Button
                                 variant="contained"
-                                color="secondary"
-                                sx={{ bgcolor: 'rgba(243, 189, 239, 0.5)', textTransform: 'none' }}
-                                onClick={() => { }}
-                            >
-                                Edit Profile
-                            </Button>
+                                color="primary"
+                                onClick={handleCreateNewItem}
+                            >Add Portfolio Item</Button>
                         )}
                     </Box>
                 )}
             </Container>
-
-            {canEditProfile() && (
-                <Button onClick={handleCreateNewItem}>Create New Portfolio</Button>
-            )}
 
             <Container className={`${styles.profilePortfolio} container`}>
                 {loading ? (
@@ -543,6 +599,55 @@ const ProfilePage = ({ params }: ProfileProps) => {
                 <DialogActions>
                     <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
                     <Button onClick={handleDeleteConfirm} color="secondary">Delete</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={isEditProfilePopupOpen}
+                onClose={() => setIsEditProfilePopupOpen(false)}
+                maxWidth="sm"
+            >
+                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        margin="dense"
+                        name="displayName"
+                        label="Display Name"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={editProfileData.displayName}
+                        onChange={handleEditProfileInputChange}
+                        required
+                    />
+                    <TextField
+                        margin="dense"
+                        name="twitterLink"
+                        label="Twitter Link"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={editProfileData.twitterLink}
+                        onChange={handleEditProfileInputChange}
+                    />
+                    <TextField
+                        margin="dense"
+                        name="websiteLink"
+                        label="Website Link"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={editProfileData.websiteLink}
+                        onChange={handleEditProfileInputChange}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsEditProfilePopupOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleEditProfileSave} color="primary">
+                        Save
+                    </Button>
                 </DialogActions>
             </Dialog>
 

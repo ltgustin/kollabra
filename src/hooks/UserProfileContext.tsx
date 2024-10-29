@@ -29,8 +29,9 @@ export const UserProfileProvider = ({ children }) => {
                             console.error('Firebase Firestore is not initialized.');
                             return;
                         }
+                        console.log(user);
                         const usersRef = collection(db, 'users');
-                        const q = query(usersRef, where('displayName', '==', user.displayName));
+                        const q = query(usersRef, where('slug', '==', user.reloadUserInfo.screenName));
                         const querySnapshot = await getDocs(q);
 
                         if (!querySnapshot.empty) {

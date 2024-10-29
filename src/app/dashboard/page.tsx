@@ -36,11 +36,11 @@ export default function DashboardPage() {
 
     const handleOnboardingComplete = async (accountType) => {
         // create user profile with account type
-        await createUserProfile(user?.uid, user?.displayName, accountType, user?.photoURL);
+        await createUserProfile(user?.uid, user?.displayName, user?.reloadUserInfo?.screenName, accountType, user?.photoURL);
         // Close the onboarding modal
         setIsOnboarding(false);
         // Redirect to the user's profile page
-        window.location.href = `/profile/${user?.displayName}`; 
+        window.location.href = `/profile/${user?.reloadUserInfo?.screenName}`; 
     };
 
     if (loading) {

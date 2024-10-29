@@ -31,17 +31,19 @@ export const checkUserInDatabase = async (uid: string) => {
 interface UserProfile {
     id: string;
     displayName: string;
+    slug: string;
     onboarded: boolean;
     createdAt: Date;
     type: string;
     profilePhoto: string;
 }
 
-export const createUserProfile = async (uid: string, displayName: string, accountType: string, profilePhoto: string): Promise<void> => {
+export const createUserProfile = async (uid: string, displayName: string, slug: string, accountType: string, profilePhoto: string): Promise<void> => {
     const userDoc = doc(db, 'users', uid);
     const userProfile: UserProfile = {
         id: uid,
         displayName,
+        slug,
         onboarded: true,
         type: accountType,
         profilePhoto: profilePhoto,
