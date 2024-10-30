@@ -65,3 +65,38 @@
 .MuiContainer-root {
     margin-top:3rem;
 }
+
+.MuiFormControl-root {
+    + .MuiFormControl-root {
+        margin-top:1rem;
+    }
+}
+
+.MuiInputBase-root {
+    border-radius:0;
+    font-size:1.1rem;
+    color:var(--color_primary);
+    font-family:var(--font-family);
+}
+
+.MuiInputBase-input {
+    border-color:#A398BB;
+}
+
+.MuiFormLabel-root {
+    font-size:1.2rem;
+    font-family: var(--font-family);
+    font-weight:var(--font-weight-bold);
+}
+
+.MuiDialogTitle-root {
+    font-weight:var(--font-weight-bold);
+    font-size:clam(1.9rem, 2.25rem);
+    letter-spacing:1px;
+    color:var(--color_black);
+    text-align:center;
+    padding-top:1.5rem;
+    padding-bottom:1.5rem;
+    line-height:1.1;
+    font-family:var(--font-family-title);
+}

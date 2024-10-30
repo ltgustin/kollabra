@@ -6,12 +6,16 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } 
 import { useAuth } from '@/hooks/useAuth';
 import { db, auth, storage } from '@/lib/firebase';
 import { useDropzone } from 'react-dropzone';
-import { Avatar, Button, Typography, Box, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Skeleton, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, Chip, ImageListItem, ImageList, IconButton, Tooltip } from '@mui/material'; 
+import { Avatar, Button, Typography, Box, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Skeleton, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, Chip, ImageListItem, ImageList, IconButton, Tooltip, InputAdornment } from '@mui/material'; 
 
 import { useUserProfile } from '@/hooks/UserProfileContext';
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { 
+    Edit as EditIcon, 
+    Delete as DeleteIcon, 
+    Twitter as TwitterIcon, 
+    Public as PublicIcon 
+} from '@mui/icons-material';
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -75,6 +79,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
         { value: 'ui-ux-design', label: 'UI / UX Design' },
         { value: 'social-media', label: 'Social Media' },
         { value: 'promotions', label: 'Promotions' },
+        { value: 'photography', label: 'Photography' },
         { value: 'misc', label: 'Misc.' },
     ];
     
@@ -212,17 +217,12 @@ const ProfilePage = ({ params }: ProfileProps) => {
         multiple: false, // Allow only one file
     });
 
-    const handleImageDelete = (fileToDelete: File) => {
-        setSelectedImages((prevFiles) => prevFiles.filter((file) => file !== fileToDelete));
-    };
-
-
     // SUBMIT FOR PORTFOLIO FORM
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const portfolioData = {
-            userId: userProfile.displayName,
+            userId: userProfile.slug,
             title: newItem.title,
             brand: newItem.brand,
             description: newItem.description,
@@ -371,15 +371,49 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         gap={2}
                         sx={{ width: '100%' }}
                     >
-                        <Box display="flex" alignItems="center" gap={2}>
+                        <Box display="flex" alignItems="center" gap={2.25}>
                             <Avatar
                                 alt={userProfile.displayName}
                                 src={userProfile?.profilePhoto}
-                                sx={{ width: 72, height: 72 }}
+                                sx={{ width: 50, height: 50 }}
                             />
                             <Box>
                                 <Typography variant="h2" fontWeight="bold" color="primary">{userProfile.displayName}</Typography>
-                                <Typography variant="h5" color="textSecondary">{userProfile.type}</Typography>
+                                <Box
+                                    display="flex" 
+                                    alignItems="center" 
+                                    gap={0.5}
+                                >
+                                    <Typography variant="h5" color="textSecondary">{userProfile.type}</Typography>
+
+                                    {userProfile.twitterLink && (
+                                        <IconButton
+                                            component="a"
+                                            href={`https://x.com/${userProfile.twitterLink}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label="Twitter/X Link - External"
+                                            size="small"
+                                            color="primary"
+                                        >
+                                            <TwitterIcon />
+                                        </IconButton>
+                                    )}
+
+                                        {userProfile.websiteLink && (
+                                            <IconButton
+                                                component="a"
+                                                href={userProfile.websiteLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                aria-label="Profile Website Link - External"
+                                                size="small"
+                                                color="primary"
+                                            >
+                                                <PublicIcon />
+                                            </IconButton>
+                                        )}
+                                </Box>
                             </Box>
                             {canEditProfile() && (
                                 <Button
@@ -431,13 +465,25 @@ const ProfilePage = ({ params }: ProfileProps) => {
                                             loading="lazy"
                                         />
                                         <Box className={styles.portfolioItemInfo}>
-                                            <h2>{item.title}</h2>
-                                            <p>{item.description}</p>
-                                            <div className="cats">
+                                            <Typography 
+                                                variant="h4"
+                                                className={styles.portfolioItemTitle}
+                                            >{item.title} 
+                                            {item.brand && (
+                                                ` | ${item.brand}`
+                                            )}
+                                            </Typography>
+                                            <Typography variant="body1">{item.description}</Typography>
+
+                                            <Box className={styles.portfolioItemCats}>
                                                 {item.categories && item.categories.map((category) => (
-                                                    <Chip key={category} label={category} />
+                                                    <Chip
+                                                        key={category}
+                                                        label={category}
+                                                        className={styles.portfolioItemCat}
+                                                    />
                                                 ))}
-                                            </div>
+                                            </Box>
                                         </Box>
 
                                         {canEditProfile() && (
@@ -494,7 +540,6 @@ const ProfilePage = ({ params }: ProfileProps) => {
                                 variant="outlined"
                                 value={newItem.brand}
                                 onChange={handleInputChange}
-                                required
                             />
 
                             <TextField
@@ -505,7 +550,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
                                 fullWidth
                                 variant="outlined"
                                 multiline
-                                rows={5}
+                                rows={3}
                                 value={newItem.description}
                                 onChange={handleInputChange}
                                 required
@@ -513,7 +558,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
                             <TextField
                                 margin="dense"
                                 name="link"
-                                label="Link (optional)"
+                                label="Link"
                                 type="text"
                                 fullWidth
                                 variant="outlined"
@@ -521,9 +566,14 @@ const ProfilePage = ({ params }: ProfileProps) => {
                                 onChange={handleInputChange}
                             />
                             <FormControl fullWidth>
-                                <InputLabel id="categories-label">Categories (choose at least one)</InputLabel>
+                                <InputLabel 
+                                    className={styles.catLabel}
+                                    id="categories-label"
+                                    shrink="true"
+                                >Categories (suggested max 3)</InputLabel>
 
                                 <ToggleButtonGroup
+                                className={styles.editCatGroup}
                                     value={selectedCategories}
                                     onChange={(event, newCategories) => {
                                         if (newCategories.length) {
@@ -532,24 +582,12 @@ const ProfilePage = ({ params }: ProfileProps) => {
                                     }}
                                     aria-label="categories"
                                     color="primary"
-                                    sx={{
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 1,
-                                    }}
                                 >
                                     {categoriesList.map(category => (
                                         <ToggleButton
+                                            className={`${styles.catToggle} ${selectedCategories.includes(category.value) ? styles.active : ''}`}
                                             key={category.value}
                                             value={category.value}
-                                            sx={{
-                                                borderColor: 'purple',
-                                                color: selectedCategories.includes(category.value) ? 'white' : 'purple',
-                                                backgroundColor: selectedCategories.includes(category.value) ? 'purple' : 'transparent',
-                                                '&:hover': { backgroundColor: 'rgba(128, 0, 128, 0.1)' },
-                                                textTransform: 'none',
-                                                fontWeight: 'bold',
-                                            }}
                                         >
                                             {category.label}
                                         </ToggleButton>
@@ -562,9 +600,11 @@ const ProfilePage = ({ params }: ProfileProps) => {
                             <Box className={styles.uploadField}>
                                 <Box className={styles.upload} {...getRootProps()}>
                                     <input {...getInputProps()} />
-                                    <Typography variant="h6">Upload Media</Typography>
+                                    <Typography variant="h4">
+                                        {selectedImages.length > 0 ? 'Replace Media' : 'Upload Media'}
+                                    </Typography>
                                     <Typography variant="body2" color="textSecondary">
-                                        Max five (5) images <br />
+                                        One (1) image allowed <br />
                                         Restricted to jpg, png, gif formats
                                     </Typography>
                                 </Box>
@@ -572,10 +612,10 @@ const ProfilePage = ({ params }: ProfileProps) => {
                                 <Box mt={2}>
                                     {selectedImages.map((url, index) => (
                                         <Chip
+                                            className={styles.uploadedImageChip}
                                             key={index}
                                             label={url.name}
-                                            onDelete={() => handleImageDelete(url)}
-                                            sx={{ marginRight: 1, marginBottom: 1 }}
+                                            variant="outlined"
                                         />
                                     ))}
                                 </Box>
@@ -583,11 +623,13 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         </div>
 
                     </DialogContent>
-                    <DialogActions>
+                    <DialogActions 
+                        sx={{mb:3,justifyContent:"center"}}
+                    >
                         <Button onClick={() => setIsPopupOpen(false)} color="primary">
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} color="primary">
+                        <Button onClick={handleSubmit} variant="contained" color="primary">
                             {editingItem ? 'Update Item' : 'Add Item'}
                         </Button>
                     </DialogActions>
@@ -596,9 +638,15 @@ const ProfilePage = ({ params }: ProfileProps) => {
 
             <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
                 <DialogTitle>Are you sure you want to delete this item?</DialogTitle>
-                <DialogActions>
+                <DialogActions
+                    sx={{ mb: 3, justifyContent: "center" }}
+                >
                     <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-                    <Button onClick={handleDeleteConfirm} color="secondary">Delete</Button>
+                    <Button 
+                        onClick={handleDeleteConfirm} 
+                        color="primary"
+                        variant="contained"
+                    >Delete</Button>
                 </DialogActions>
             </Dialog>
 
@@ -627,6 +675,11 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         type="text"
                         fullWidth
                         variant="outlined"
+                        slotProps={{
+                            input: {
+                                startAdornment: <InputAdornment position="start">https://x.com/</InputAdornment>,
+                            },
+                        }}
                         value={editProfileData.twitterLink}
                         onChange={handleEditProfileInputChange}
                     />
@@ -641,11 +694,15 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         onChange={handleEditProfileInputChange}
                     />
                 </DialogContent>
-                <DialogActions>
+                <DialogActions
+                    sx={{ mb: 3, justifyContent: "center" }}
+                >
                     <Button onClick={() => setIsEditProfilePopupOpen(false)} color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={handleEditProfileSave} color="primary">
+                    <Button onClick={handleEditProfileSave} color="primary"
+                    variant="contained"
+                    >
                         Save
                     </Button>
                 </DialogActions>
