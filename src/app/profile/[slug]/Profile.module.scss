@@ -132,3 +132,19 @@
         }
     }
 }
+
+.handleBox {
+    position: absolute;
+    padding: 5px;
+    left: 0rem;
+    top: 0rem;
+
+    button {
+        background: rgba(white, 0.65);
+
+        &:hover,
+        &:focus {
+            background: white;
+        }
+    }
+}

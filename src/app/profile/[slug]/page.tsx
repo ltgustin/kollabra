@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { db, auth, storage } from '@/lib/firebase';
 import { useDropzone } from 'react-dropzone';
@@ -14,12 +14,17 @@ import {
     Edit as EditIcon, 
     Delete as DeleteIcon, 
     Twitter as TwitterIcon, 
-    Public as PublicIcon 
+    Public as PublicIcon,
+    DragIndicator as DragIcon
 } from '@mui/icons-material';
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import styles from './Profile.module.scss';
+
+import { DndContext } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { arrayMove, SortableContext, useSortable } from '@dnd-kit/sortable';
 
 interface ProfileProps {
     params: {
@@ -100,7 +105,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
 
                 // Fetch portfolio items
                 const portfolioRef = collection(db, 'portfolio');
-                const portfolioQuery = query(portfolioRef, where('userId', '==', slug));
+                const portfolioQuery = query(portfolioRef, where('userId', '==', slug), orderBy('order'));
                 const portfolioSnapshot = await getDocs(portfolioQuery);
 
                 const items = portfolioSnapshot.docs.map(doc => ({
@@ -356,6 +361,146 @@ const ProfilePage = ({ params }: ProfileProps) => {
         }
     }, [userProfile]); // Update editProfileData whenever userProfile changes
 
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+
+        // Check if active and over are defined
+        if (!active || !over) {
+            console.warn("Drag ended without a valid active or over item.");
+            return; // Exit if there's no valid drag event
+        }
+
+        if (active.id !== over.id) {
+            const oldIndex = portfolioItems.findIndex(item => item.id === active.id);
+            const newIndex = portfolioItems.findIndex(item => item.id === over.id);
+
+            // Ensure both indices are valid
+            if (oldIndex === -1 || newIndex === -1) {
+                console.log("Invalid indices for active or over item.");
+                return; // Exit if indices are invalid
+            }
+
+            // Update the state with the new order
+            const newPortfolioItems = arrayMove(portfolioItems, oldIndex, newIndex);
+            setPortfolioItems(newPortfolioItems);
+
+            // Send the new order to the backend
+            try {
+                await savePortfolioOrder(newPortfolioItems);
+                // Optionally, show a success message or handle the response
+            } catch (error) {
+                console.log("Failed to save the new order:", error);
+                // Optionally, revert the state or show an error message
+            }
+        }
+    };
+
+    // Function to save the new order to the backend
+    const savePortfolioOrder = async (items) => {
+        try {
+            const response = await fetch('/api/savePortfolioOrder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(items.map((item, index) => ({ id: item.id, order: index }))), // Use index as order
+            });
+
+            // Log the response for debugging
+            const responseData = await response.json();
+            console.log('Response from API:', responseData);
+
+            if (!response.ok) {
+                throw new Error(`Failed to save order: ${responseData.error || 'Unknown error'}`);
+            }
+
+            return responseData;
+        } catch (error) {
+            console.error('Error in savePortfolioOrder:', error);
+            throw error; // Rethrow the error after logging
+        }
+    };
+
+    const SortableItem = ({ item, editPortfolioItem, confirmDelete }) => {
+        const { 
+            attributes, 
+            listeners, 
+            setNodeRef,
+            transform,
+            transition,
+            isDragging
+        } = useSortable({ id: item.id });
+
+        const style = {
+            transform: CSS.Transform.toString(transform),
+            transition,
+            opacity: isDragging ? 0.5 : 1,
+        };
+
+        return (
+            <ImageListItem 
+                className={`${styles.portfolioItem} ${isDragging ? styles.dragging : ''}`}
+                ref={setNodeRef} 
+                style={style}
+            >
+                <Box>
+                    <Box 
+                        className={styles.handleBox}
+                        {...listeners} // Only apply listeners to the drag handle
+                    >
+                        <Tooltip title="Reorder">
+                            <IconButton {...attributes} {...listeners}>
+                                <DragIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                    <img
+                        srcSet={`${item.imageUrls[0]}?w=248&fit=crop&auto=format&dpr=2 2x`}
+                        src={`${item.imageUrls[0]}?w=248&fit=crop&auto=format`}
+                        alt={item.title}
+                        loading="lazy"
+                    />
+                    <Box className={styles.portfolioItemInfo}>
+                        <Typography 
+                            variant="h4"
+                            className={styles.portfolioItemTitle}
+                        >{item.title} 
+                        {item.brand && (
+                            ` | ${item.brand}`
+                        )}
+                        </Typography>
+                        <Typography variant="body1">{item.description}</Typography>
+
+                        <Box className={styles.portfolioItemCats}>
+                            {item.categories && item.categories.map((category) => (
+                                <Chip
+                                    key={category}
+                                    label={category}
+                                    className={styles.portfolioItemCat}
+                                />
+                            ))}
+                        </Box>
+                    </Box>
+
+                    {canEditProfile() && (
+                        <Box className={styles.actionButtons}>
+                            <Tooltip title="Edit">
+                                <IconButton onClick={(e) => { e.stopPropagation(); editPortfolioItem(item.id); }}>
+                                    <EditIcon />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                                <IconButton onClick={(e) => { e.stopPropagation(); confirmDelete(item.id); }}>
+                                    <DeleteIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
+                </Box>
+            </ImageListItem>
+        );
+    };
+
     return (
         <>
             <Container className={`${styles.profileHeader} container d-flex f-j-sb`}>
@@ -444,71 +589,70 @@ const ProfilePage = ({ params }: ProfileProps) => {
                 )}
             </Container>
 
-            <Container className={`${styles.profilePortfolio} container`}>
-                {loading ? (
-                    // Show Skeleton while loading
-                    <>
-                        <Skeleton variant="rectangular" height={118} />
-                        <Skeleton variant="text" />
-                        <Skeleton variant="text" />
-                    </>
-                ) : (
-                    portfolioItems.length > 0 ? (
-                        <ImageList className={styles.portfolioGrid} variant="masonry" cols={3} gap={8}>
-                            {portfolioItems.map(item => (
-                                <ImageListItem className={styles.portfolioItem} key={item.id}>
-                                    <Box> {/* Added Box to wrap the contents */}
-                                        <img
-                                            srcSet={`${item.imageUrls[0]}?w=248&fit=crop&auto=format&dpr=2 2x`}
-                                            src={`${item.imageUrls[0]}?w=248&fit=crop&auto=format`}
-                                            alt={item.title}
-                                            loading="lazy"
-                                        />
-                                        <Box className={styles.portfolioItemInfo}>
-                                            <Typography 
-                                                variant="h4"
-                                                className={styles.portfolioItemTitle}
-                                            >{item.title} 
-                                            {item.brand && (
-                                                ` | ${item.brand}`
-                                            )}
-                                            </Typography>
-                                            <Typography variant="body1">{item.description}</Typography>
-
-                                            <Box className={styles.portfolioItemCats}>
-                                                {item.categories && item.categories.map((category) => (
-                                                    <Chip
-                                                        key={category}
-                                                        label={category}
-                                                        className={styles.portfolioItemCat}
-                                                    />
-                                                ))}
-                                            </Box>
-                                        </Box>
-
-                                        {canEditProfile() && (
-                                            <Box className={styles.actionButtons}>
-                                                <Tooltip title="Edit">
-                                                    <IconButton onClick={() => editPortfolioItem(item.id)}>
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton onClick={() => confirmDelete(item.id)}>
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        )}
-                                    </Box> {/* Closing Box here */}
-                                </ImageListItem>
-                            ))}
-                        </ImageList>
+            <DndContext onDragEnd={handleDragEnd}>
+                <Container className={`${styles.profilePortfolio} container`}>
+                    {loading ? (
+                        // Show Skeleton while loading
+                        <>
+                            <Skeleton variant="rectangular" height={118} />
+                            <Skeleton variant="text" />
+                            <Skeleton variant="text" />
+                        </>
                     ) : (
-                        <Typography variant="body1">No portfolio items found.</Typography>
-                    )
-                )}
-            </Container>
+                        portfolioItems.length > 0 ? (
+                            <SortableContext items={portfolioItems.map(item => item.id)}>
+                                <ImageList className={styles.portfolioGrid} variant="masonry" cols={3} gap={8}>
+                                    {portfolioItems.map(item => (
+                                        canEditProfile() ? (
+                                            <SortableItem 
+                                                key={item.id} 
+                                                item={item} 
+                                                editPortfolioItem={editPortfolioItem}
+                                                confirmDelete={confirmDelete}
+                                            />
+                                        ) : (
+                                            <ImageListItem key={item.id} className={styles.portfolioItem}>
+                                                {/* Render non-draggable item */}
+                                                <Box>
+                                                    <img
+                                                        srcSet={`${item.imageUrls[0]}?w=248&fit=crop&auto=format&dpr=2 2x`}
+                                                        src={`${item.imageUrls[0]}?w=248&fit=crop&auto=format`}
+                                                        alt={item.title}
+                                                        loading="lazy"
+                                                    />
+                                                    <Box className={styles.portfolioItemInfo}>
+                                                        <Typography 
+                                                            variant="h4"
+                                                            className={styles.portfolioItemTitle}
+                                                        >{item.title} 
+                                                        {item.brand && (
+                                                            ` | ${item.brand}`
+                                                        )}
+                                                        </Typography>
+                                                        <Typography variant="body1">{item.description}</Typography>
+
+                                                        <Box className={styles.portfolioItemCats}>
+                                                            {item.categories && item.categories.map((category) => (
+                                                                <Chip
+                                                                    key={category}
+                                                                    label={category}
+                                                                    className={styles.portfolioItemCat}
+                                                                />
+                                                            ))}
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                            </ImageListItem>
+                                        )
+                                    ))}
+                                </ImageList>
+                            </SortableContext>
+                        ) : (
+                            <Typography variant="body1">No portfolio items found.</Typography>
+                        )
+                    )}
+                </Container>
+            </DndContext>
 
             {canEditProfile() && (
                 <Dialog 
