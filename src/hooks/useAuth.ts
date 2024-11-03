@@ -12,7 +12,7 @@ interface User extends FirebaseUser {
 }
 
 export function useAuth() {
-    const [user, setUser] = useState<User | null>(null); // Use your User type here
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
