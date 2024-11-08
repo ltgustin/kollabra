@@ -1,5 +1,48 @@
 .profileHeader {
-    margin-bottom:4rem;
+    flex-direction:column;
+    flex-wrap:wrap;
+}
+
+.addPortfolioBtn {
+    align-self:flex-end;
+}
+
+.editProfileBtn {
+    width:100%;
+    max-width:220px;
+}
+
+.profileSideSection {
+    border-top:1px solid #D9D2EA;
+    padding-top:2rem;
+    margin-top:2rem;
+}
+
+.workExperienceItem {
+    text-align:left;
+    gap:1rem;
+
+    p {
+        font-weight:var(--font-weight-bold);
+
+        + p {
+            font-weight:var(--font-weight-normal);
+        }
+    }
+}
+
+.workExperienceEditItem {
+    margin-top:1rem;
+
+    > div {
+        + div {
+            margin-top:0 !important;
+        }
+    }
+}
+
+.profilePortfolio {
+    padding:0;
 }
 
 .dialogFlex {

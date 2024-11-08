@@ -1,0 +1,10 @@
+.contentContainer {
+    width:100%;
+    flex-wrap:wrap;
+    gap:2rem;
+    padding:0;
+   
+    @media (min-width:768px) {  
+        width:calc(100% - 285px);
+    }
+}

@@ -19,25 +19,32 @@ interface ProfileHeaderProps {
         type: string;
     };
     canEditProfile: boolean;
-    onAddPortfolioItem: () => void;
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfile, setUserProfile, onAddPortfolioItem }) => {
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfile, setUserProfile }) => {
     const { user } = useAuth();
     const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = useState(false);
+    const [isEditWorkExperiencePopupOpen, setIsEditWorkExperiencePopupOpen] = useState(false);
     const [editProfileData, setEditProfileData] = useState({
         displayName: userProfile?.displayName || '',
+        shortDescription: userProfile?.shortDescription || '',
         twitterLink: userProfile?.twitterLink || '',
         websiteLink: userProfile?.websiteLink || '',
     });
+    const [charCount, setCharCount] = useState(editProfileData.shortDescription.length);
+    const [workExperience, setWorkExperience] = useState(userProfile?.workExperience || []);
 
     useEffect(() => {
         if (userProfile) {
+            const shortDescription = userProfile.shortDescription || '';
             setEditProfileData({
                 displayName: userProfile.displayName || '',
+                shortDescription,
                 twitterLink: userProfile.twitterLink || '',
                 websiteLink: userProfile.websiteLink || '',
             });
+            setCharCount(shortDescription.length);
+            setWorkExperience(userProfile.workExperience || []);
         }
     }, [userProfile]);
 
@@ -46,6 +53,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
             const updatedProfileData = {
                 ...userProfile,
                 displayName: editProfileData.displayName,
+                shortDescription: editProfileData.shortDescription,
                 twitterLink: editProfileData.twitterLink,
                 websiteLink: editProfileData.websiteLink,
             };
@@ -58,97 +66,168 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
 
     const handleEditProfileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        if (name === 'shortDescription' && value.length > 200) return;
         setEditProfileData(prevState => ({ ...prevState, [name]: value }));
+        if (name === 'shortDescription') {
+            setCharCount(value.length);
+        }
+    };
+
+    const handleAddExperience = () => {
+        setWorkExperience([...workExperience, { title: '', position: '', length: '' }]);
+    };
+
+    const handleExperienceChange = (index: number, field: string, value: string) => {
+        const updatedExperience = workExperience.map((exp, i) =>
+            i === index ? { ...exp, [field]: value } : exp
+        );
+        setWorkExperience(updatedExperience);
+    };
+
+    const handleSaveWorkExperience = async () => {
+        if (user) {
+            const updatedProfileData = {
+                ...userProfile,
+                workExperience,
+            };
+            // Update user profile in the database
+            await updateDoc(doc(db, 'users', user.uid), updatedProfileData);
+            setUserProfile(updatedProfileData); // Update local state
+            setIsEditWorkExperiencePopupOpen(false); // Close the dialog
+        }
     };
 
     return (
-        <Container className={`${styles.profileHeader} container d-flex f-j-sb`}>
+        <>
             {!userProfile ? ( // Check if userProfile exists
                 <Skeleton variant="circular">
                     <Avatar sx={{ width: 72, height: 72 }} />
                 </Skeleton>
             ) : (
                <Box
+                    className={styles.profileHeader}
                     display="flex"
+                    textAlign="center"
                     alignItems="center"
                     justifyContent="space-between"
                     gap={2}
                     sx={{ width: '100%' }}
                 >
-                    <Box display="flex" alignItems="center" gap={2.25}>
-                        <Avatar
-                            alt={userProfile.displayName}
-                            src={userProfile.profilePhoto}
-                            sx={{ width: 50, height: 50 }}
-                        />
-                        <Box>
-                            <Typography
-                                variant="h2"
-                                fontWeight="bold"
-                                color="primary"
-                            >{userProfile.displayName}</Typography>
-                            <Box
-                                display="flex"
-                                alignItems="center"
-                                gap={0.5}
-                            >
-                                <Typography
-                                    variant="h5"
-                                    color="textSecondary"
-                                >
-                                    {userProfile.type}
-                                </Typography>
-                                {userProfile.twitterLink && (
-                                    <IconButton
-                                        component="a"
-                                        href={`https://x.com/${userProfile.twitterLink}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        aria-label="Twitter/X Link - External"
-                                        size="small"
-                                        color="primary"
-                                    >
-                                        <TwitterIcon />
-                                    </IconButton>
-                                )}
+                    <Avatar
+                        alt={userProfile.displayName}
+                        src={userProfile.profilePhoto}
+                        sx={{ width: 50, height: 50 }}
+                    />
+                    <Box>
+                        <Typography
+                            variant="h2"
+                            fontWeight="bold"
+                            color="primary"
+                        >{userProfile.displayName}</Typography>
+                        
+                        <Typography
+                            variant="body2"
+                            color="textSecondary"
+                            className="mt-10 mb-10"
+                        >
+                            {userProfile.shortDescription}
+                        </Typography>
 
-                                {userProfile.websiteLink && (
-                                    <IconButton
-                                        component="a"
-                                        href={userProfile.websiteLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        aria-label="Profile Website Link - External"
-                                        size="small"
-                                        color="primary"
+                        <Box
+                            display="flex"
+                            alignItems="center"
+                            className={styles.profileSocial}
+                            gap={0.5}
+                            justifyContent="center"
+                        >
+                            {userProfile.twitterLink && (
+                                <IconButton
+                                    component="a"
+                                    href={`https://x.com/${userProfile.twitterLink}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Twitter/X Link - External"
+                                    size="small"
+                                    color="primary"
+                                >
+                                    <TwitterIcon />
+                                </IconButton>
+                            )}
+
+                            {userProfile.websiteLink && (
+                                <IconButton
+                                    component="a"
+                                    href={userProfile.websiteLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Profile Website Link - External"
+                                    size="small"
+                                    color="primary"
+                                >
+                                    <PublicIcon />
+                                </IconButton>
+                            )}
+                        </Box>
+
+                        {canEditProfile && (
+                            <Button
+                                variant="contained"
+                                className={`${styles.editProfileBtn} tertiary small`}
+                                onClick={() => setIsEditProfilePopupOpen(true)}
+                            >
+                                Edit Profile
+                            </Button>
+                        )}
+
+                        {userProfile.type === 'Creative' && (
+                            <Box 
+                                marginTop={2}
+                                className={styles.profileSideSection}
+                            >
+                                <Typography 
+                                    variant="h3" 
+                                    fontWeight="bold" 
+                                    color="primary"
+                                    mb={2}
+                                >
+                                    Work Experience
+                                </Typography>
+                                {(userProfile.workExperience || []).map((exp, index) => (
+                                    <Box 
+                                        key={index} 
+                                        display="flex" 
+                                        justifyContent="space-between" 
+                                        mb={2}
+                                        className={styles.workExperienceItem}
                                     >
-                                        <PublicIcon />
-                                    </IconButton>
+                                        <Box>
+                                            <Typography variant="body1">
+                                                {exp.title}
+                                            </Typography>
+                                            <Typography variant="body2" fontStyle="italic">
+                                                {exp.position}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body2">
+                                            {exp.length}
+                                        </Typography>
+                                    </Box>
+                                ))}
+
+                                {canEditProfile && (
+                                    <Button 
+                                        onClick={() => setIsEditWorkExperiencePopupOpen(true)} variant="contained" 
+                                        color="primary"
+                                        className={`${styles.editProfileBtn} tertiary small`}
+                                    >
+                                        Edit Work Experience
+                                    </Button>
                                 )}
                             </Box>
-                    </Box>
-
-                    {canEditProfile && (
-                        <Button
-                            variant="contained"
-                            className="tertiary small edit-profile"
-                            onClick={() => setIsEditProfilePopupOpen(true)}
-                        >
-                            Edit Profile
-                        </Button>
-                    )}
-                    </Box>
-
-                    {canEditProfile && (
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={onAddPortfolioItem}
-                        >
-                            Add Portfolio Item
-                        </Button>
-                    )}
+                        )}
                 </Box>
+
+            </Box>
             )}
 
             <Dialog
@@ -168,6 +247,19 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
                         value={editProfileData.displayName}
                         onChange={handleEditProfileInputChange}
                         required
+                    />
+                    <TextField
+                        margin="dense"
+                        name="shortDescription"
+                        label="Short Description"
+                        type="text"
+                        multiline
+                        rows={4}
+                        fullWidth
+                        variant="outlined"
+                        value={editProfileData.shortDescription}
+                        onChange={handleEditProfileInputChange}
+                        helperText={`${charCount}/200 characters`}
                     />
                     <TextField
                         margin="dense"
@@ -216,7 +308,60 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Container>
+
+            <Dialog
+                open={isEditWorkExperiencePopupOpen}
+                onClose={() => setIsEditWorkExperiencePopupOpen(false)}
+                maxWidth="sm"
+            >
+                <DialogTitle>Edit Work Experience</DialogTitle>
+                <DialogContent>
+                    {workExperience.map((exp, index) => (
+                        <Box 
+                            key={index} 
+                            display="flex" 
+                            alignItems="center" 
+                            gap={2} 
+                            mb={2}
+                            className={styles.workExperienceEditItem}
+                        >
+                            <TextField
+                                label="Job Title"
+                                value={exp.title}
+                                onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
+                                variant="outlined"
+                                size="small"
+                            />
+                            <TextField
+                                label="Job Position"
+                                value={exp.position}
+                                onChange={(e) => handleExperienceChange(index, 'position', e.target.value)}
+                                variant="outlined"
+                                size="small"
+                            />
+                            <TextField
+                                label="Job Length"
+                                value={exp.length}
+                                onChange={(e) => handleExperienceChange(index, 'length', e.target.value)}
+                                variant="outlined"
+                                size="small"
+                            />
+                        </Box>
+                    ))}
+                    <Button onClick={handleAddExperience} variant="outlined" color="primary">
+                        Add Experience
+                    </Button>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsEditWorkExperiencePopupOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSaveWorkExperience} color="primary" variant="contained">
+                        Save Work Experience
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 };
 

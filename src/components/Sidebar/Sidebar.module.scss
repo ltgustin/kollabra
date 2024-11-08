@@ -1,0 +1,11 @@
+.sidebar {
+    background:#F7F6FB;
+    border-radius:1.5rem;
+    padding:2rem;
+    width:100%;
+    flex-direction:column;
+
+    @media (min-width:768px) {
+        width: 285px;
+    }
+}

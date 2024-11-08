@@ -3,7 +3,7 @@
     letter-spacing:0;
     min-width:rem(120);
     text-transform:capitalize;
-    border-radius:22px;
+    border-radius:12px;
     font-weight:var(--font-weight-bold);
     font-family:var(--font-family);
     padding:0.4rem 1.6rem;
@@ -55,15 +55,17 @@
         font-weight:var(--font-weight-bold);
     }
 
+    &.MuiTypography-h3 {
+        color: var(--color_black);
+        font-size: clam(1.2rem, 1.375rem);
+        font-weight: var(--font-weight-bold);
+    }
+
     &.MuiTypography-h5 {
         color: var(--color_black);
         font-size: clam(1.2rem, 1.375rem);
         font-style:italic;
     }
-}
-
-.MuiContainer-root {
-    margin-top:3rem;
 }
 
 .MuiFormControl-root {

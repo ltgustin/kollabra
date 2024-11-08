@@ -74,7 +74,7 @@ const CreativePortfolio = ({
 
     return (
         <DndContext onDragEnd={handleDragEnd}>
-            <Container className={`${styles.profilePortfolio} container`}>
+            <Container className={`${styles.profilePortfolio}`}>
                 {loading ? (
                     // Show Skeleton while loading
                     <>

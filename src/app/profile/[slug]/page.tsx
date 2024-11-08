@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { Skeleton } from '@mui/material'; 
-
+import { Skeleton, Button } from '@mui/material'; 
+import styles from './Profile.module.scss';
 // components
+import PageContainer from '@/components/PageContainer';
+import Sidebar from '@/components/Sidebar';
+import ContentContainer from '@/components/ContentContainer';
 import ProfileHeader from './ProfileHeader';
 import SnackbarNotification from './SnackbarNotification';
 import CompanyJobs from './CompanyJobs';
 import CreativePortfolio from './CreativePortfolio';
-
 interface ProfileProps {
     params: {
         slug: string;
@@ -88,40 +90,55 @@ const ProfilePage = ({ params }: ProfileProps) => {
     };
 
     return (
-        <>
-            <ProfileHeader
-                userProfile={userProfile}
-                setUserProfile={setUserProfile}
-                canEditProfile={canEditProfile()}
-                // onAddPortfolioItem={handleCreateNewItem}
-                portfolioItems={portfolioItems}
-                setPortfolioItems={setPortfolioItems}
-            />
-
-            {loading ? (
-                <>
-                    <Skeleton variant="rectangular" height={118} />
-                </>
-            ) : userProfile.type === 'Company' ? (
-                <CompanyJobs />
-                ) : (
-                <CreativePortfolio
-                    loading={loading}
-                    portfolioItems={portfolioItems}
-                    canEditProfile={canEditProfile()}
-                    setSnackbarMessage={setSnackbarMessage}
-                    setSnackbarOpen={setSnackbarOpen}
-                    setPortfolioItems={setPortfolioItems}
+        <PageContainer>
+            <Sidebar className="profile-sidebar">
+                <ProfileHeader
                     userProfile={userProfile}
-                />
-            )}
-
-            <SnackbarNotification
-                open={snackbarOpen}
-                message={snackbarMessage}
-                onClose={handleSnackbarClose}
+                    setUserProfile={setUserProfile}
+                    canEditProfile={canEditProfile()}
+                    // onAddPortfolioItem={handleCreateNewItem}
+                    portfolioItems={portfolioItems}
+                    setPortfolioItems={setPortfolioItems}
             />
-        </>
+            </Sidebar>
+
+            <ContentContainer>
+                {canEditProfile() && (
+                    <Button
+                        className={styles.addPortfolioBtn}
+                        variant="contained"
+                        color="primary"
+                        // onClick={onAddPortfolioItem}
+                    >
+                        Add Portfolio Item
+                    </Button>
+                )}
+
+                {loading ? (
+                    <>
+                        <Skeleton variant="rectangular" height={118} />
+                    </>
+                ) : userProfile.type === 'Company' ? (
+                    <CompanyJobs />
+                    ) : (
+                    <CreativePortfolio
+                        loading={loading}
+                        portfolioItems={portfolioItems}
+                        canEditProfile={canEditProfile()}
+                        setSnackbarMessage={setSnackbarMessage}
+                        setSnackbarOpen={setSnackbarOpen}
+                        setPortfolioItems={setPortfolioItems}
+                        userProfile={userProfile}
+                    />
+                )}
+
+                <SnackbarNotification
+                    open={snackbarOpen}
+                    message={snackbarMessage}
+                    onClose={handleSnackbarClose}
+                />
+            </ContentContainer>
+        </PageContainer>
     );
 };
 
