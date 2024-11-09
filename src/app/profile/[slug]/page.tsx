@@ -2,11 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, orderBy, where, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, where, getDocs, addDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { Skeleton, Button } from '@mui/material'; 
-import styles from './Profile.module.scss';
+import { Skeleton } from '@mui/material'; 
 // components
 import PageContainer from '@/components/PageContainer';
 import Sidebar from '@/components/Sidebar';
@@ -32,6 +31,15 @@ interface PortfolioItem {
     updatedAt: Date;
 }
 
+interface JobItem {
+    id: string;
+    userId: string;
+    title: string;
+    description: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 const ProfilePage = ({ params }: ProfileProps) => {
     const { user } = useAuth();
     const { slug } = params;
@@ -41,9 +49,11 @@ const ProfilePage = ({ params }: ProfileProps) => {
 
     // portfolio
     const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+    const [jobItems, setJobItems] = useState<JobItem[]>([]);
     
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarType, setSnackbarType] = useState('success');
     
     useEffect(() => {
         const fetchData = async () => {
@@ -71,6 +81,18 @@ const ProfilePage = ({ params }: ProfileProps) => {
                 }));
 
                 setPortfolioItems(items);
+
+                // Fetch job items
+                const jobsRef = collection(db, 'job');
+                const jobsQuery = query(jobsRef, where('userId', '==', slug), orderBy('createdAt'));
+                const jobsSnapshot = await getDocs(jobsQuery);
+
+                const jobItems = jobsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                setJobItems(jobItems);
             } catch (error) {
                 console.error('Error fetching data:', error);
             } finally {
@@ -96,30 +118,27 @@ const ProfilePage = ({ params }: ProfileProps) => {
                     userProfile={userProfile}
                     setUserProfile={setUserProfile}
                     canEditProfile={canEditProfile()}
-                    // onAddPortfolioItem={handleCreateNewItem}
                     portfolioItems={portfolioItems}
                     setPortfolioItems={setPortfolioItems}
             />
             </Sidebar>
 
             <ContentContainer>
-                {canEditProfile() && (
-                    <Button
-                        className={styles.addPortfolioBtn}
-                        variant="contained"
-                        color="primary"
-                        // onClick={onAddPortfolioItem}
-                    >
-                        Add Portfolio Item
-                    </Button>
-                )}
-
                 {loading ? (
                     <>
                         <Skeleton variant="rectangular" height={118} />
                     </>
                 ) : userProfile.type === 'Company' ? (
-                    <CompanyJobs />
+                    <CompanyJobs 
+                        loading={loading}
+                        jobItems={jobItems}
+                        setJobItems={setJobItems}
+                        canEditProfile={canEditProfile()}
+                        setSnackbarMessage={setSnackbarMessage}
+                        setSnackbarOpen={setSnackbarOpen}
+                        setSnackbarType={setSnackbarType}
+                        userProfile={userProfile}
+                    />
                     ) : (
                     <CreativePortfolio
                         loading={loading}
@@ -127,6 +146,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         canEditProfile={canEditProfile()}
                         setSnackbarMessage={setSnackbarMessage}
                         setSnackbarOpen={setSnackbarOpen}
+                        setSnackbarType={setSnackbarType}
                         setPortfolioItems={setPortfolioItems}
                         userProfile={userProfile}
                     />
@@ -136,6 +156,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
                     open={snackbarOpen}
                     message={snackbarMessage}
                     onClose={handleSnackbarClose}
+                    severity={snackbarType}
                 />
             </ContentContainer>
         </PageContainer>

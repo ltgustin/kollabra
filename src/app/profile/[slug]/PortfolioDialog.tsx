@@ -6,7 +6,7 @@ import styles from './Profile.module.scss';
 import { useDropzone } from 'react-dropzone';
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDocs, orderBy, query } from 'firebase/firestore';
 
 interface PortfolioDialogProps {
     open: boolean;
@@ -36,6 +36,7 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
     setSelectedImages,
     setSnackbarMessage,
     setSnackbarOpen,
+    setSnackbarType,
     setPortfolioItems,
     editingItem,
     setEditingItem,
@@ -111,12 +112,21 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
     };
 
     const handleCategoryChange = (event: React.MouseEvent<HTMLElement>, newCategories: string[]) => {
+        setSelectedCategories(newCategories);
         setNewItem(prevState => ({ ...prevState, categories: newCategories }));
     };
 
     // SUBMIT FOR PORTFOLIO FORM
     const handlePortfolioSubmit = async (e) => {
         e.preventDefault();
+
+        // Check if an image is uploaded
+        if (selectedImages.length === 0) {
+            setSnackbarType('error');
+            setSnackbarMessage('Please upload an image before submitting.');
+            setSnackbarOpen(true);
+            return; // Exit the function if no image is uploaded
+        }
 
         console.log(userProfile);
 
@@ -149,6 +159,21 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
                 );
                 setSnackbarMessage('Portfolio item updated successfully!');
             } else {
+                // Fetch the current highest order
+                const portfolioRef = collection(db, 'portfolio');
+                const orderQuery = query(portfolioRef, orderBy('order', 'desc'));
+                const orderSnapshot = await getDocs(orderQuery);
+
+                // Determine the next order value
+                let nextOrder = 0; // Default to 0 if no items exist
+                if (!orderSnapshot.empty) {
+                    const highestOrderItem = orderSnapshot.docs[0].data();
+                    nextOrder = highestOrderItem.order + 1;
+                }
+
+                // Add the order to the portfolio data
+                portfolioData.order = nextOrder;
+
                 // Create new item
                 const docId = await createPortfolioItem(portfolioData);
                 const newPortfolioItem: PortfolioItem = {
@@ -250,13 +275,9 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
                         >Categories (suggested max 3)</InputLabel>
                         <ToggleButtonGroup
                             className={styles.editCatGroup}
-                            value={newItem.categories}
-                            // onChange={handleCategoryChange}
-                            onChange={(event, newCategories) => {
-                                if (newCategories.length) {
-                                    setSelectedCategories(newCategories);
-                                }
-                            }}
+                            value={selectedCategories}
+                            exclusive={false}
+                            onChange={handleCategoryChange}
                             aria-label="categories"
                             color="primary"
                         >

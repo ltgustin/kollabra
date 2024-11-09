@@ -3,13 +3,20 @@
     flex-wrap:wrap;
 }
 
-.addPortfolioBtn {
+.addNewBtn {
     align-self:flex-end;
 }
 
 .editProfileBtn {
     width:100%;
     max-width:220px;
+}
+
+.noJobsContainer {
+    text-align: center;
+    padding: 2rem;
+    border: 1px dashed #D9D2EA;
+    border-radius: 1rem;
 }
 
 .profileSideSection {
@@ -41,7 +48,8 @@
     }
 }
 
-.profilePortfolio {
+.profilePortfolio,
+.companyJobs {
     padding:0;
 }
 

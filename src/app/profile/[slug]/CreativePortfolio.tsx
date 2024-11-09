@@ -1,9 +1,9 @@
-import React from 'react';
-import { Skeleton, Container, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Skeleton, Container, Typography, Button } from '@mui/material';
 import styles from './Profile.module.scss';
 import { DndContext } from '@dnd-kit/core';
 import PortfolioList from './PortfolioList';
-import { arrayMove, SortableContext, useSortable } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 
 const CreativePortfolio = ({ 
     loading, 
@@ -12,8 +12,13 @@ const CreativePortfolio = ({
     setSnackbarMessage, 
     setSnackbarOpen, 
     setPortfolioItems,
-    userProfile
+    userProfile,
+    setSnackbarType
 }) => {
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
+
     // Function to save the new order to the backend
     const savePortfolioOrder = async (items) => {
         try {
@@ -72,34 +77,60 @@ const CreativePortfolio = ({
         }
     };
 
+    // NEW ITEM
+    const handleCreateNewItem = () => {
+        setEditingItem(null);
+        setSelectedCategories([]);
+        setIsPopupOpen(true);
+    };
+
     return (
-        <DndContext onDragEnd={handleDragEnd}>
-            <Container className={`${styles.profilePortfolio}`}>
-                {loading ? (
-                    // Show Skeleton while loading
-                    <>
-                        <Skeleton variant="rectangular" height={118} />
-                        <Skeleton variant="text" />
-                        <Skeleton variant="text" />
-                    </>
-                ) : (
-                    portfolioItems.length > 0 ? (
-                        <PortfolioList
-                            items={portfolioItems}
-                            canEditProfile={canEditProfile}
-                            portfolioItems={portfolioItems}
-                            setSnackbarMessage={setSnackbarMessage}
-                            setSnackbarOpen={setSnackbarOpen}
-                            setPortfolioItems={setPortfolioItems}
-                            userProfile={userProfile}
-                        />
+        <>
+            {canEditProfile && (
+                <Button
+                    className={styles.addNewBtn}
+                    variant="contained"
+                    color="primary"
+                    onClick={handleCreateNewItem}
+                >
+                    Add Portfolio Item
+                </Button>
+            )}
+            <DndContext onDragEnd={handleDragEnd}>
+                <Container className={`${styles.profilePortfolio}`}>
+                    {loading ? (
+                        // Show Skeleton while loading
+                        <>
+                            <Skeleton variant="rectangular" height={118} />
+                            <Skeleton variant="text" />
+                            <Skeleton variant="text" />
+                        </>
                     ) : (
-                        <Typography variant="body1">No portfolio items found.</Typography>
-                    )
-                )}
-            </Container>
-            
-        </DndContext>
+                        portfolioItems.length > 0 ? (
+                            <PortfolioList
+                                items={portfolioItems}
+                                canEditProfile={canEditProfile}
+                                portfolioItems={portfolioItems}
+                                setSnackbarMessage={setSnackbarMessage}
+                                setSnackbarOpen={setSnackbarOpen}
+                                setSnackbarType={setSnackbarType}
+                                setPortfolioItems={setPortfolioItems}
+                                userProfile={userProfile}
+                                selectedCategories={selectedCategories}
+                                setSelectedCategories={setSelectedCategories}
+                                isPopupOpen={isPopupOpen}
+                                setIsPopupOpen={setIsPopupOpen}
+                                editingItem={editingItem}
+                                setEditingItem={setEditingItem}
+                            />
+                        ) : (
+                            <Typography variant="body1">No portfolio items found.</Typography>
+                        )
+                    )}
+                </Container>
+                
+            </DndContext>
+        </>
     );
 };
 

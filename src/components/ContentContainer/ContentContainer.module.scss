@@ -3,6 +3,7 @@
     flex-wrap:wrap;
     gap:2rem;
     padding:0;
+    flex-direction:column;
    
     @media (min-width:768px) {  
         width:calc(100% - 285px);

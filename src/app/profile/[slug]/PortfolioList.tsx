@@ -18,7 +18,7 @@ interface PortfolioListProps {
         imageUrls: string[];
         categories: string[];
     }[];
-    canEditProfile: boolean;
+    canEditProfile: () => boolean;
 }
 
 const PortfolioList: React.FC<PortfolioListProps> = ({ 
@@ -27,8 +27,15 @@ const PortfolioList: React.FC<PortfolioListProps> = ({
     portfolioItems, 
     setSnackbarMessage, 
     setSnackbarOpen,
+    setSnackbarType,
     setPortfolioItems,
-    userProfile
+    userProfile,
+    selectedCategories,
+    setSelectedCategories,
+    isPopupOpen,
+    setIsPopupOpen,
+    editingItem,
+    setEditingItem
 }) => {
     const { user } = useAuth();
     const [newItem, setNewItem] = useState({
@@ -38,9 +45,6 @@ const PortfolioList: React.FC<PortfolioListProps> = ({
         link: '',
     });
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
-    const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
@@ -103,13 +107,6 @@ const PortfolioList: React.FC<PortfolioListProps> = ({
         } else {
             console.error('Invalid document ID:', portfolioItemId);
         }
-    };
-
-    // NEW ITEM
-    const handleCreateNewItem = () => {
-        setEditingItem(null);
-        setSelectedCategories([]);
-        setIsPopupOpen(true);
     };
 
     const handleDialogClose = () => {
@@ -218,6 +215,7 @@ const PortfolioList: React.FC<PortfolioListProps> = ({
                 setSelectedImages={setSelectedImages}
                 setSnackbarMessage={setSnackbarMessage}
                 setSnackbarOpen={setSnackbarOpen}
+                setSnackbarType={setSnackbarType}
                 setPortfolioItems={setPortfolioItems}
                 editingItem={editingItem}
                 setEditingItem={setEditingItem}

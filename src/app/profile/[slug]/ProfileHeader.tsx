@@ -6,6 +6,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import InputAdornment from '@mui/material/InputAdornment';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 
 import {
     Twitter as TwitterIcon,
@@ -81,6 +82,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
         const updatedExperience = workExperience.map((exp, i) =>
             i === index ? { ...exp, [field]: value } : exp
         );
+        setWorkExperience(updatedExperience);
+    };
+
+    const handleDeleteExperience = (index: number) => {
+        const updatedExperience = workExperience.filter((_, i) => i !== index);
         setWorkExperience(updatedExperience);
     };
 
@@ -346,6 +352,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
                                 variant="outlined"
                                 size="small"
                             />
+                            <IconButton 
+                                onClick={() => handleDeleteExperience(index)}>
+                                <DeleteIcon />
+                            </IconButton>
                         </Box>
                     ))}
                     <Button onClick={handleAddExperience} variant="outlined" color="primary">
