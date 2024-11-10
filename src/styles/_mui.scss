@@ -102,3 +102,10 @@
     line-height:1.1;
     font-family:var(--font-family-title);
 }
+
+.MuiTiptap-RichTextContent-root {
+    ul,
+    ol {
+        list-style-position: inside;
+    }
+}

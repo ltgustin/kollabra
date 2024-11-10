@@ -11,7 +11,7 @@ import PageContainer from '@/components/PageContainer';
 import Sidebar from '@/components/Sidebar';
 import ContentContainer from '@/components/ContentContainer';
 import ProfileHeader from './ProfileHeader';
-import SnackbarNotification from './SnackbarNotification';
+import SnackbarNotification from '@/components/SnackbarNotification';
 import CompanyJobs from './CompanyJobs';
 import CreativePortfolio from './CreativePortfolio';
 interface ProfileProps {

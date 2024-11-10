@@ -1,28 +1,46 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo} from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import styles from './EditJob.module.scss';
+import { Box, Button, FormControl, InputLabel, ToggleButtonGroup, ToggleButton, Radio, RadioGroup, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
 
-import { 
-    useEditor, 
-} from '@tiptap/react';
+import { categoriesList } from '@/constants/catlist';
+
+import PageContainer from '@/components/PageContainer';
+import Sidebar from '@/components/Sidebar';
+import ContentContainer from '@/components/ContentContainer';
+
+import SnackbarNotification from '@/components/SnackbarNotification';
+
+import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import {
     MenuSelectHeading,
     MenuButtonBold,
     MenuButtonItalic,
     MenuButtonUnderline,
     MenuButtonBulletedList,
+    MenuButtonOrderedList,
     MenuButtonBlockquote,
     MenuDivider,
     MenuButtonRedo,
+    MenuButtonEditLink,
     MenuButtonUndo,
+    MenuButtonSubscript,
+    MenuButtonSuperscript,
+    MenuButtonHorizontalRule,
     MenuControlsContainer,
     RichTextEditorProvider,
     RichTextField,
+    LinkBubbleMenu,
+    LinkBubbleMenuHandler,
 } from "mui-tiptap";
 
 interface JobProps {
@@ -36,13 +54,32 @@ const EditJob = ({ params }: JobProps) => {
     const { id } = params;
     const [job, setJob] = useState(null);
 
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarType, setSnackbarType] = useState('success');
+
     const editor = useEditor({
-        extensions: [StarterKit],
+        extensions: [
+            StarterKit, 
+            Underline,
+            Link.configure({
+                openOnClick: false,
+                autolink: false,
+                defaultProtocol: 'https',
+            }),
+            LinkBubbleMenuHandler,
+            Subscript,
+            Superscript,
+        ],
         content: '',
         onUpdate: ({ editor }) => {
             setJob((prevJob) => ({ ...prevJob, description: editor.getHTML() }));
         },
     });
+
+    const handleSnackbarClose = () => {
+        setSnackbarOpen(false);
+    };
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -51,9 +88,13 @@ const EditJob = ({ params }: JobProps) => {
             if (docSnap.exists()) {
                 const jobData = docSnap.data();
                 setJob(jobData);
+                setSelectedJobType(jobData.type || null);
+                setSelectedJobCategories(jobData.categories || []);
                 editor?.commands.setContent(jobData.description || '');
             } else {
-                console.error('No such document!');
+                setSnackbarMessage('Job not found');
+                setSnackbarType('error');
+                setSnackbarOpen(true);
             }
         };
 
@@ -67,7 +108,9 @@ const EditJob = ({ params }: JobProps) => {
             ...job,
             updatedAt: new Date(),
         });
-        alert('Job updated successfully');
+        setSnackbarMessage('Job updated successfully');
+        setSnackbarType('success');
+        setSnackbarOpen(true);
     };
 
     const handleSaveAndPublish = async () => {
@@ -78,41 +121,177 @@ const EditJob = ({ params }: JobProps) => {
             status: 'published',
             updatedAt: new Date(),
         });
-        alert('Job published successfully');
+        setSnackbarMessage('Job published successfully');
+        setSnackbarType('success');
+        setSnackbarOpen(true);
+    };
+
+    const jobTypesList = [
+        { value: 'full-time', label: 'Full-Time' },
+        { value: 'part-time', label: 'Part-Time' },
+        { value: 'contract', label: 'Contract' },
+        { value: 'freelance', label: 'Freelance' },
+        { value: 'internship', label: 'Internship' },
+    ];
+
+    // Add state to manage selected type
+    const [selectedJobType, setSelectedJobType] = useState<string | null>(null);
+    const [selectedJobCategories, setSelectedJobCategories] = useState<string[]>([]);
+
+    const handleJobTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newType = (event.target as HTMLInputElement).value;
+        setSelectedJobType(newType);
+        setJob(prevJob => ({ ...prevJob, type: newType }));
+    };
+
+    const handleJobCategoriesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const category = event.target.value;
+        setSelectedJobCategories(prevCategories => {
+            const updatedCategories = prevCategories.includes(category)
+                ? prevCategories.filter(c => c !== category)
+                : [...prevCategories, category];
+
+            setJob(prevJob => ({
+                ...prevJob,
+                categories: updatedCategories
+            }));
+
+            return updatedCategories;
+        });
     };
 
     if (!job) return <div>Loading...</div>;
 
     return (
-        <div className={styles.jobEditorContainer}>
-            <input
-                className={styles.jobTitle}
-                type="text"
-                value={job.title || ''}
-                onChange={(e) => setJob({ ...job, title: e.target.value })}
-            />
+        <PageContainer>
+            <Sidebar>
+                <FormControl component="fieldset" fullWidth>
+                    <InputLabel
+                        className={styles.catLabel}
+                        id="job-type-label"
+                        shrink={true}
+                    >
+                        Job Type
+                    </InputLabel>
+                    <RadioGroup
+                        aria-label="job type"
+                        name="job-type"
+                        value={selectedJobType}
+                        onChange={handleJobTypeChange}
+                    >
+                        {jobTypesList.map(type => (
+                            <FormControlLabel
+                                key={type.value}
+                                value={type.value}
+                                control={<Radio color="primary" />}
+                                label={type.label}
+                            />
+                        ))}
+                    </RadioGroup>
+                </FormControl>
 
-            <RichTextEditorProvider editor={editor}>
-                <RichTextField
-                    controls={
-                        <MenuControlsContainer>
-                            <MenuSelectHeading />
-                            <MenuDivider />
-                            <MenuButtonBold />
-                            <MenuButtonItalic />
-                            <MenuButtonUnderline />
-                            <MenuButtonBulletedList />
-                            <MenuButtonBlockquote />
-                            <MenuButtonRedo />
-                            <MenuButtonUndo />
-                        </MenuControlsContainer>
-                    }
+                <FormControl component="fieldset" fullWidth>
+                    <InputLabel
+                        className={styles.catLabel}
+                        id="job-categories-label"
+                        shrink={true}
+                    >
+                        Job Categories
+                    </InputLabel>
+                    <FormGroup>
+                        {categoriesList.map(category => (
+                            <FormControlLabel
+                                key={category.value}
+                                control={
+                                    <Checkbox
+                                        checked={selectedJobCategories.includes(category.value)}
+                                        onChange={handleJobCategoriesChange}
+                                        value={category.value}
+                                        color="primary"
+                                    />
+                                }
+                                label={category.label}
+                            />
+                        ))}
+                    </FormGroup>
+                </FormControl>
+
+                {/* ADD TYPE OF JOB HERE */}
+
+                {/* ADD PAY RATE HERE */}
+
+                <Box 
+                    display="flex" 
+                    flexDirection="column" 
+                    gap={2}
+                    mt={3}
+                >
+                    <Button 
+                        variant="contained"
+                        onClick={handleSave}
+                        className="tertiary small"
+                    >
+                        Save
+                    </Button>
+                    <Button 
+                        variant="contained"
+                        onClick={handleSaveAndPublish}
+                    >
+                        Save and Publish
+                    </Button>
+                </Box>
+            </Sidebar>
+
+            <ContentContainer>
+                <Box className={styles.jobEditorContainer}>
+                    <input
+                        className={styles.jobTitle}
+                        type="text"
+                        value={job.title || 'Job Title'}
+                        onChange={(e) => setJob({ ...job, title: e.target.value })}
+                    />
+
+                    <RichTextEditorProvider 
+                        editor={editor}
+                        className={styles.tiptapEditor}
+                    >
+                        <RichTextField
+                            controls={
+                                <MenuControlsContainer>
+                                    <MenuSelectHeading />
+                                    <MenuDivider />
+                                    <MenuButtonBold />
+                                    <MenuButtonItalic />
+                                    <MenuButtonUnderline />
+                                    <MenuDivider />
+                                    <MenuButtonEditLink />
+                                    <MenuDivider />
+                                    <MenuButtonBulletedList />
+                                    <MenuButtonOrderedList />
+                                    <MenuButtonBlockquote />
+                                    <MenuDivider />
+                                    <MenuButtonSubscript />
+                                    <MenuButtonSuperscript />
+                                    <MenuButtonHorizontalRule />
+                                    <MenuDivider />
+                                    <MenuButtonRedo />
+                                    <MenuButtonUndo />
+                                </MenuControlsContainer>
+                            }
+                        />
+                        <LinkBubbleMenu editor={editor} />
+                    </RichTextEditorProvider>
+
+                </Box>
+
+                <SnackbarNotification
+                    open={snackbarOpen}
+                    message={snackbarMessage}
+                    onClose={handleSnackbarClose}
+                    severity={snackbarType}
                 />
-            </RichTextEditorProvider>
-
-            <button onClick={handleSave}>Save</button>
-            <button onClick={handleSaveAndPublish}>Save and Publish</button>
-        </div>
+            </ContentContainer>
+        </PageContainer>
     );
 };
 
