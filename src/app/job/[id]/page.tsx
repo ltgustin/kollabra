@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import styles from './EditJob.module.scss';
-import { Box, Button, FormControl, InputLabel, ToggleButtonGroup, ToggleButton, Radio, RadioGroup, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, TextField, Radio, RadioGroup, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
 
 import { categoriesList } from '@/constants/catlist';
 
@@ -106,9 +106,10 @@ const EditJob = ({ params }: JobProps) => {
         const docRef = doc(db, 'job', id as string);
         await updateDoc(docRef, {
             ...job,
+            status: 'draft',
             updatedAt: new Date(),
         });
-        setSnackbarMessage('Job updated successfully');
+        setSnackbarMessage('Job saved successfully');
         setSnackbarType('success');
         setSnackbarOpen(true);
     };
@@ -151,6 +152,8 @@ const EditJob = ({ params }: JobProps) => {
                 ? prevCategories.filter(c => c !== category)
                 : [...prevCategories, category];
 
+            console.log(updatedCategories);
+
             setJob(prevJob => ({
                 ...prevJob,
                 categories: updatedCategories
@@ -165,7 +168,11 @@ const EditJob = ({ params }: JobProps) => {
     return (
         <PageContainer>
             <Sidebar>
-                <FormControl component="fieldset" fullWidth>
+                <FormControl 
+                    className={styles.sidebarFormControl}
+                    component="fieldset" 
+                    fullWidth
+                >
                     <InputLabel
                         className={styles.catLabel}
                         id="job-type-label"
@@ -190,7 +197,11 @@ const EditJob = ({ params }: JobProps) => {
                     </RadioGroup>
                 </FormControl>
 
-                <FormControl component="fieldset" fullWidth>
+                <FormControl 
+                    className={styles.sidebarFormControl}
+                    component="fieldset" 
+                    fullWidth
+                >
                     <InputLabel
                         className={styles.catLabel}
                         id="job-categories-label"
@@ -214,11 +225,7 @@ const EditJob = ({ params }: JobProps) => {
                             />
                         ))}
                     </FormGroup>
-                </FormControl>
-
-                {/* ADD TYPE OF JOB HERE */}
-
-                {/* ADD PAY RATE HERE */}
+                </FormControl>             
 
                 <Box 
                     display="flex" 
@@ -231,7 +238,7 @@ const EditJob = ({ params }: JobProps) => {
                         onClick={handleSave}
                         className="tertiary small"
                     >
-                        Save
+                        Save as Draft
                     </Button>
                     <Button 
                         variant="contained"
@@ -244,12 +251,47 @@ const EditJob = ({ params }: JobProps) => {
 
             <ContentContainer>
                 <Box className={styles.jobEditorContainer}>
-                    <input
-                        className={styles.jobTitle}
-                        type="text"
-                        value={job.title || 'Job Title'}
-                        onChange={(e) => setJob({ ...job, title: e.target.value })}
-                    />
+                    <FormControl
+                        className={styles.sidebarFormControl}
+                        component="fieldset"
+                        fullWidth
+                    >
+                        <InputLabel
+                            className={styles.jobTitleLabel}
+                            id="job-title-label"
+                            shrink={true}
+                        >
+                            Job Title
+                        </InputLabel>
+                        <TextField
+                            variant="outlined"
+                            fullWidth
+                            value={job.title || 'Job Title'}
+                            onChange={(e) => setJob({ ...job, title: e.target.value })}
+                            placeholder="Job Title..."
+                        />
+                    </FormControl>
+
+                    <FormControl
+                        className={styles.sidebarFormControl}
+                        component="fieldset"
+                        fullWidth
+                    >
+                        <InputLabel
+                            className={styles.catLabel}
+                            id="job-salary-label"
+                            shrink={true}
+                        >
+                            Job Salary/Price
+                        </InputLabel>
+                        <TextField
+                            variant="outlined"
+                            fullWidth
+                            value={job.salary || ''}
+                            onChange={(e) => setJob({ ...job, salary: e.target.value })}
+                            placeholder="Enter job salary or price"
+                        />
+                    </FormControl>
 
                     <RichTextEditorProvider 
                         editor={editor}

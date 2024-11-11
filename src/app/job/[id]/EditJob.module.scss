@@ -16,3 +16,19 @@
     border:0;
     border-bottom:1px solid #bbb;
 }
+
+.sidebarFormControl {
+    label {
+        position: relative;
+        color:var(--color_black);
+
+        > span {
+            padding:4px !important;
+        }
+    }
+
+    > label {
+        transform:none !important;
+        font-size:1.1rem;
+    }
+}
