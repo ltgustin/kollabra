@@ -11,10 +11,27 @@
     border-radius:1rem;
 }
 
+.jobTitle,
+.jobTitleValue {
+    font-size:4rem !important;
+}
+
 .jobTitle {
-    font-size:2.5rem;
-    border:0;
-    border-bottom:1px solid #bbb;
+    margin-bottom:2rem;
+}
+
+.jobDetails {
+    display:flex;
+    flex-direction:column;
+    gap:0.5rem;
+
+    + .jobDetails {
+        margin-top:2rem;
+    }
+}
+
+.jobDetailsValue {
+    font-size:1.2rem;
 }
 
 .sidebarFormControl {
@@ -31,4 +48,8 @@
         transform:none !important;
         font-size:1.1rem;
     }
+}
+
+.jobContentContainer {
+
 }

@@ -39,10 +39,88 @@ h3,
 h4,
 h5,
 h6 {
+    color:$black;
     line-height: 1.1;
     font-family:var(--font-family-title);
 }
 
 h1 {
     font-size: clam(3.2rem,5rem);
+}
+
+h2,h3,h4,h5,h6 {
+    font-family: $font;
+    margin-bottom:rem(20);
+    margin-top:rem(20);
+}
+
+h2 {
+    font-size: clam(2.2rem,2.6rem);
+}
+
+h3 {
+    font-size: clam(1.8rem,2.2rem);
+}
+
+h4 {
+    font-size: clam(1.4rem,1.8rem);
+}
+
+h5 {
+    font-size: clam(1.2rem,1.4rem);
+}
+
+h6 {
+    font-size: clam(1rem,1.2rem);
+}
+
+.entry-content {
+    padding: 0 0 rem(50) 0;
+
+    ul, ol {
+        list-style-position:inside;
+
+        li + li {
+            margin-top:0.5rem;
+        }
+
+        li > p:first-child {
+            display: inline;
+        }
+    }   
+
+    ul {
+        margin: rem(20) auto;
+        overflow: hidden;
+
+        li::marker {
+            color:$primary;
+        }
+    }
+
+    p {
+        + * {
+            margin-top:rem(15);
+        }
+
+        a {
+            color:$primary;
+            font-weight: $bold;
+        }
+    }
+
+    hr {
+        margin: rem(30) auto;
+        outline: none;
+        border: 0;
+        width: 100%;
+        height: 5px;
+        background:$gray;
+    }
+
+    blockquote {
+        margin:rem(20) 0;
+        padding:rem(10) rem(15);
+        background:$gray;
+    }
 }

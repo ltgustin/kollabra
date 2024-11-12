@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo} from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/useAuth';
 import styles from './EditJob.module.scss';
-import { Box, Button, FormControl, InputLabel, TextField, Radio, RadioGroup, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, TextField, Radio, RadioGroup, FormControlLabel, FormGroup, Checkbox, Typography } from '@mui/material';
 
 import { categoriesList } from '@/constants/catlist';
 
@@ -50,6 +51,7 @@ interface JobProps {
 }
 
 const EditJob = ({ params }: JobProps) => {
+    const { user } = useAuth();
     const router = useRouter();
     const { id } = params;
     const [job, setJob] = useState(null);
@@ -57,6 +59,7 @@ const EditJob = ({ params }: JobProps) => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarType, setSnackbarType] = useState('success');
+    
 
     const editor = useEditor({
         extensions: [
@@ -100,6 +103,10 @@ const EditJob = ({ params }: JobProps) => {
 
         fetchJob();
     }, [router, id, editor]);
+
+    const canEditProfile = () => {
+        return user && user?.reloadUserInfo.screenName === job.userId;
+    };
 
     const handleSave = async () => {
         if (!id) return; // Ensure id is available
@@ -163,168 +170,252 @@ const EditJob = ({ params }: JobProps) => {
         });
     };
 
+    const getLabels = (
+        values: string[],
+        mappingList: { value: string; label: string }[],
+        returnStyle: 'comma' | 'paragraph' = 'comma'
+    ) => {
+        const labels = values.map(value => {
+            const item = mappingList.find(mapping => mapping.value === value);
+            return item ? item.label : value;
+        });
+
+        if (returnStyle === 'paragraph') {
+            return labels.map(label => `<p>${label}</p>`).join('');
+        }
+
+        return labels.join(', ');
+    };
+
     if (!job) return <div>Loading...</div>;
 
     return (
         <PageContainer>
             <Sidebar>
-                <FormControl 
-                    className={styles.sidebarFormControl}
-                    component="fieldset" 
-                    fullWidth
-                >
-                    <InputLabel
-                        className={styles.catLabel}
-                        id="job-type-label"
-                        shrink={true}
-                    >
-                        Job Type
-                    </InputLabel>
-                    <RadioGroup
-                        aria-label="job type"
-                        name="job-type"
-                        value={selectedJobType}
-                        onChange={handleJobTypeChange}
-                    >
-                        {jobTypesList.map(type => (
-                            <FormControlLabel
-                                key={type.value}
-                                value={type.value}
-                                control={<Radio color="primary" />}
-                                label={type.label}
+                {canEditProfile() ? (
+                    <>
+                        <FormControl
+                            className={styles.sidebarFormControl}
+                            component="fieldset"
+                            fullWidth
+                        >
+                            <InputLabel
+                                className={styles.catLabel}
+                                id="job-salary-label"
+                                shrink={true}
+                            >
+                                Job Salary/Price
+                            </InputLabel>
+                            <TextField
+                                variant="outlined"
+                                fullWidth
+                                value={job.salary || ''}
+                                onChange={(e) => setJob({ ...job, salary: e.target.value })}
+                                placeholder="Enter job salary or price"
                             />
-                        ))}
-                    </RadioGroup>
-                </FormControl>
+                        </FormControl>
 
-                <FormControl 
-                    className={styles.sidebarFormControl}
-                    component="fieldset" 
-                    fullWidth
-                >
-                    <InputLabel
-                        className={styles.catLabel}
-                        id="job-categories-label"
-                        shrink={true}
-                    >
-                        Job Categories
-                    </InputLabel>
-                    <FormGroup>
-                        {categoriesList.map(category => (
-                            <FormControlLabel
-                                key={category.value}
-                                control={
-                                    <Checkbox
-                                        checked={selectedJobCategories.includes(category.value)}
-                                        onChange={handleJobCategoriesChange}
-                                        value={category.value}
-                                        color="primary"
+                        <FormControl
+                            className={styles.sidebarFormControl}
+                            component="fieldset"
+                            fullWidth
+                        >
+                            <InputLabel
+                                className={styles.catLabel}
+                                id="job-type-label"
+                                shrink={true}
+                            >
+                                Job Type
+                            </InputLabel>
+                            <RadioGroup
+                                aria-label="job type"
+                                name="job-type"
+                                value={selectedJobType}
+                                onChange={handleJobTypeChange}
+                            >
+                                {jobTypesList.map(type => (
+                                    <FormControlLabel
+                                        key={type.value}
+                                        value={type.value}
+                                        control={<Radio color="primary" />}
+                                        label={type.label}
                                     />
-                                }
-                                label={category.label}
-                            />
-                        ))}
-                    </FormGroup>
-                </FormControl>             
+                                ))}
+                            </RadioGroup>
+                        </FormControl>
 
-                <Box 
-                    display="flex" 
-                    flexDirection="column" 
-                    gap={2}
-                    mt={3}
-                >
-                    <Button 
-                        variant="contained"
-                        onClick={handleSave}
-                        className="tertiary small"
-                    >
-                        Save as Draft
-                    </Button>
-                    <Button 
-                        variant="contained"
-                        onClick={handleSaveAndPublish}
-                    >
-                        Save and Publish
-                    </Button>
-                </Box>
+                        <FormControl
+                            className={styles.sidebarFormControl}
+                            component="fieldset"
+                            fullWidth
+                        >
+                            <InputLabel
+                                className={styles.catLabel}
+                                id="job-categories-label"
+                                shrink={true}
+                            >
+                                Job Categories
+                            </InputLabel>
+                            <FormGroup>
+                                {categoriesList.map(category => (
+                                    <FormControlLabel
+                                        key={category.value}
+                                        control={
+                                            <Checkbox
+                                                checked={selectedJobCategories.includes(category.value)}
+                                                onChange={handleJobCategoriesChange}
+                                                value={category.value}
+                                                color="primary"
+                                            />
+                                        }
+                                        label={category.label}
+                                    />
+                                ))}
+                            </FormGroup>
+                        </FormControl>
+
+                        <Box
+                            display="flex"
+                            flexDirection="column"
+                            gap={2}
+                            mt={3}
+                        >
+                            <Button
+                                variant="contained"
+                                onClick={handleSave}
+                                className="tertiary small"
+                            >
+                                Save as Draft
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleSaveAndPublish}
+                            >
+                                Save and Publish
+                            </Button>
+                        </Box>
+                    </>
+                ) : (
+                    <>
+                        <Box 
+                            className={styles.jobDetails}
+                        >
+                            <Typography
+                                variant="h3"
+                                className={styles.jobDetailsTitle}
+                            >
+                                Salary:
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                className={styles.jobDetailsValue}
+                            >
+                                {job.salary}
+                            </Typography>
+                        </Box>
+
+                        <Box className={styles.jobDetails}>
+                            <Typography
+                                variant="h3"
+                                className={styles.jobDetailsTitle}
+                            >
+                                Job Type:
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                className={styles.jobDetailsValue}
+                                dangerouslySetInnerHTML={{ __html: getLabels([job.type], jobTypesList, 'paragraph') }}
+                             />
+                        </Box>
+
+                        <Box className={styles.jobDetails}>
+                            <Typography
+                                variant="h3"
+                                className={styles.jobDetailsTitle}
+                            >
+                                Job Categories:
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                className={styles.jobDetailsValue}
+                                dangerouslySetInnerHTML={{ __html: getLabels(job.categories, categoriesList, 'paragraph') }}
+                             />
+                        </Box>
+                    </>
+                )}
             </Sidebar>
 
             <ContentContainer>
-                <Box className={styles.jobEditorContainer}>
-                    <FormControl
-                        className={styles.sidebarFormControl}
-                        component="fieldset"
-                        fullWidth
-                    >
-                        <InputLabel
-                            className={styles.jobTitleLabel}
-                            id="job-title-label"
-                            shrink={true}
-                        >
-                            Job Title
-                        </InputLabel>
-                        <TextField
-                            variant="outlined"
+                {canEditProfile() ? (
+                    <Box className={styles.jobEditorContainer}>
+                        <FormControl
+                            className={styles.sidebarFormControl}
+                            component="fieldset"
                             fullWidth
-                            value={job.title || 'Job Title'}
-                            onChange={(e) => setJob({ ...job, title: e.target.value })}
-                            placeholder="Job Title..."
-                        />
-                    </FormControl>
-
-                    <FormControl
-                        className={styles.sidebarFormControl}
-                        component="fieldset"
-                        fullWidth
-                    >
-                        <InputLabel
-                            className={styles.catLabel}
-                            id="job-salary-label"
-                            shrink={true}
                         >
-                            Job Salary/Price
-                        </InputLabel>
-                        <TextField
-                            variant="outlined"
-                            fullWidth
-                            value={job.salary || ''}
-                            onChange={(e) => setJob({ ...job, salary: e.target.value })}
-                            placeholder="Enter job salary or price"
-                        />
-                    </FormControl>
+                            <InputLabel
+                                className={styles.jobTitleLabel}
+                                id="job-title-label"
+                                shrink={true}
+                            >
+                                Job Title
+                            </InputLabel>
+                            <TextField
+                                className={styles.jobTitleValue}
+                                variant="outlined"
+                                fullWidth
+                                value={job.title || 'Job Title'}
+                                onChange={(e) => setJob({ ...job, title: e.target.value })}
+                                placeholder="Job Title..."
+                            />
+                        </FormControl>
 
-                    <RichTextEditorProvider 
-                        editor={editor}
-                        className={styles.tiptapEditor}
-                    >
-                        <RichTextField
-                            controls={
-                                <MenuControlsContainer>
-                                    <MenuSelectHeading />
-                                    <MenuDivider />
-                                    <MenuButtonBold />
-                                    <MenuButtonItalic />
-                                    <MenuButtonUnderline />
-                                    <MenuDivider />
-                                    <MenuButtonEditLink />
-                                    <MenuDivider />
-                                    <MenuButtonBulletedList />
-                                    <MenuButtonOrderedList />
-                                    <MenuButtonBlockquote />
-                                    <MenuDivider />
-                                    <MenuButtonSubscript />
-                                    <MenuButtonSuperscript />
-                                    <MenuButtonHorizontalRule />
-                                    <MenuDivider />
-                                    <MenuButtonRedo />
-                                    <MenuButtonUndo />
-                                </MenuControlsContainer>
-                            }
-                        />
-                        <LinkBubbleMenu editor={editor} />
-                    </RichTextEditorProvider>
+                        <RichTextEditorProvider 
+                            editor={editor}
+                            className={styles.tiptapEditor}
+                        >
+                            <RichTextField
+                                controls={
+                                    <MenuControlsContainer>
+                                        <MenuSelectHeading />
+                                        <MenuDivider />
+                                        <MenuButtonBold />
+                                        <MenuButtonItalic />
+                                        <MenuButtonUnderline />
+                                        <MenuDivider />
+                                        <MenuButtonEditLink />
+                                        <MenuDivider />
+                                        <MenuButtonBulletedList />
+                                        <MenuButtonOrderedList />
+                                        <MenuButtonBlockquote />
+                                        <MenuDivider />
+                                        <MenuButtonSubscript />
+                                        <MenuButtonSuperscript />
+                                        <MenuButtonHorizontalRule />
+                                        <MenuDivider />
+                                        <MenuButtonRedo />
+                                        <MenuButtonUndo />
+                                    </MenuControlsContainer>
+                                }
+                            />
+                            <LinkBubbleMenu editor={editor} />
+                        </RichTextEditorProvider>
 
-                </Box>
+                    </Box>
+                ) : (
+                    <Box className={`${styles.jobContentContainer} entry-content`}>
+                        <Typography
+                            variant="h1"
+                            className={styles.jobTitle}
+                        >
+                            {job.title}
+                        </Typography>
+                        <div
+                            className={styles.jobContent}
+                            dangerouslySetInnerHTML={{ __html: job.description }} 
+                        />
+                    </Box>
+                )}
 
                 <SnackbarNotification
                     open={snackbarOpen}
