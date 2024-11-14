@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import styles from './EditJob.module.scss';
+import NextLink from 'next/link';
 import { Box, Button, FormControl, InputLabel, TextField, Radio, RadioGroup, FormControlLabel, FormGroup, Checkbox, Typography } from '@mui/material';
 
 import { categoriesList } from '@/constants/catlist';
@@ -75,6 +76,7 @@ const EditJob = ({ params }: JobProps) => {
             Superscript,
         ],
         content: '',
+        immediatelyRender: false,
         onUpdate: ({ editor }) => {
             setJob((prevJob) => ({ ...prevJob, description: editor.getHTML() }));
         },
@@ -346,6 +348,8 @@ const EditJob = ({ params }: JobProps) => {
             </Sidebar>
 
             <ContentContainer>
+                <NextLink href={`/profile/${job.userId}`}>Back to Profile</NextLink>
+                
                 {canEditProfile() ? (
                     <Box className={styles.jobEditorContainer}>
                         <FormControl

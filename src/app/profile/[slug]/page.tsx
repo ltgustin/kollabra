@@ -138,6 +138,7 @@ const ProfilePage = ({ params }: ProfileProps) => {
                         setSnackbarOpen={setSnackbarOpen}
                         setSnackbarType={setSnackbarType}
                         userProfile={userProfile}
+                        user={user}
                     />
                     ) : (
                     <CreativePortfolio

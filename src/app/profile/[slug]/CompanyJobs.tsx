@@ -14,15 +14,16 @@ const CompanyJobs = ({
     setSnackbarMessage,
     setSnackbarOpen,
     setSnackbarType,
-    userProfile
+    userProfile,
+    user
 }: {
     loading: boolean;
     jobItems: JobItem[];
     setJobItems: (items: JobItem[]) => void;
     canEditProfile: () => boolean;
+    userProfile: UserProfile;
+    user: User;
 }) => {
-    const [editingJob, setEditingJob] = useState<JobItem | null>(null);
-    const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
     const router = useRouter();
 
     // NEW JOB
@@ -31,6 +32,7 @@ const CompanyJobs = ({
             const docRef = await addDoc(collection(db, 'job'), {
                 status: 'draft',
                 userId: userProfile.slug,
+                displayName: userProfile.displayName,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -68,8 +70,10 @@ const CompanyJobs = ({
                                 key={job.id} 
                                 job={job} 
                                 canEditProfile={canEditProfile}
-                                setEditingJob={setEditingJob}
-                                setIsJobPopupOpen={setIsJobPopupOpen}
+                                user={user}
+                                setSnackbarMessage={setSnackbarMessage}
+                                setSnackbarOpen={setSnackbarOpen}
+                                setSnackbarType={setSnackbarType}
                             />
                         ))
                     ) : (

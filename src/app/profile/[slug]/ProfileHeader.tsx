@@ -61,6 +61,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
             // Update user profile in the database
             await updateDoc(doc(db, 'users', user.uid), updatedProfileData);
             setUserProfile(updatedProfileData); // Update local state
+            sessionStorage.setItem('userProfile', JSON.stringify(updatedProfileData)); // Update session storage
             setIsEditProfilePopupOpen(false); // Close the dialog
         }
     };
