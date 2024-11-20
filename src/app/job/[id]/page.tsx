@@ -59,8 +59,7 @@ const EditJob = ({ params }: JobProps) => {
 
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarType, setSnackbarType] = useState('success');
-    
+    const [snackbarType, setSnackbarType] = useState('success');    
 
     const editor = useEditor({
         extensions: [

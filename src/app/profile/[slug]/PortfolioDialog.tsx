@@ -184,9 +184,9 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
             setEditingItem(null); // Reset editing item
             setIsPopupOpen(false);
         } catch (error) {
-            console.error('Error saving portfolio item:', error);
             setSnackbarMessage('Error saving portfolio item.');
             setSnackbarOpen(true);
+            setSnackbarType('error');
         }
     }
 

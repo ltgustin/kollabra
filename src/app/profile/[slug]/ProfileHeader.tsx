@@ -26,6 +26,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
     const { user } = useAuth();
     const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = useState(false);
     const [isEditWorkExperiencePopupOpen, setIsEditWorkExperiencePopupOpen] = useState(false);
+    const [isEditWorkSkillsPopupOpen, setIsEditWorkSkillsPopupOpen] = useState(false);
     const [editProfileData, setEditProfileData] = useState({
         displayName: userProfile?.displayName || '',
         shortDescription: userProfile?.shortDescription || '',
@@ -34,7 +35,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
     });
     const [charCount, setCharCount] = useState(editProfileData.shortDescription.length);
     const [workExperience, setWorkExperience] = useState(userProfile?.workExperience || []);
-
+    const [workSkills, setWorkSkills] = useState(userProfile?.workSkills || []);
     useEffect(() => {
         if (userProfile) {
             const shortDescription = userProfile.shortDescription || '';
@@ -46,6 +47,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
             });
             setCharCount(shortDescription.length);
             setWorkExperience(userProfile.workExperience || []);
+            setWorkSkills(userProfile.workSkills || []);
+
+            console.log(user);
         }
     }, [userProfile]);
 
@@ -79,6 +83,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
         setWorkExperience([...workExperience, { title: '', position: '', length: '' }]);
     };
 
+    const handleAddSkill = () => {
+        setWorkSkills([...workSkills, { title: '', description: '' }]);
+    };
+
     const handleExperienceChange = (index: number, field: string, value: string) => {
         const updatedExperience = workExperience.map((exp, i) =>
             i === index ? { ...exp, [field]: value } : exp
@@ -86,9 +94,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
         setWorkExperience(updatedExperience);
     };
 
+    const handleSkillChange = (index: number, field: string, value: string) => {
+        const updatedSkills = workSkills.map((skill, i) =>
+            i === index ? { ...skill, [field]: value } : skill
+        );
+        setWorkSkills(updatedSkills);
+    };
+
     const handleDeleteExperience = (index: number) => {
         const updatedExperience = workExperience.filter((_, i) => i !== index);
         setWorkExperience(updatedExperience);
+    };
+
+    const handleDeleteSkill = (index: number) => {
+        const updatedSkills = workSkills.filter((_, i) => i !== index);
+        setWorkSkills(updatedSkills);
     };
 
     const handleSaveWorkExperience = async () => {
@@ -101,6 +121,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
             await updateDoc(doc(db, 'users', user.uid), updatedProfileData);
             setUserProfile(updatedProfileData); // Update local state
             setIsEditWorkExperiencePopupOpen(false); // Close the dialog
+        }
+    };
+
+    const handleSaveWorkSkills = async () => {
+        if (user) {
+            const updatedProfileData = { 
+                ...userProfile, 
+                workSkills 
+            };
+            await updateDoc(doc(db, 'users', user.uid), updatedProfileData);
+            setUserProfile(updatedProfileData); // Update local state
+            setIsEditWorkSkillsPopupOpen(false); // Close the dialog
         }
     };
 
@@ -187,6 +219,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
                         )}
 
                         {userProfile.type === 'Creative' && (
+                            <>
                             <Box 
                                 marginTop={2}
                                 className={styles.profileSideSection}
@@ -231,6 +264,49 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
                                     </Button>
                                 )}
                             </Box>
+
+                            <Box 
+                                marginTop={2}
+                                className={styles.profileSideSection}
+                            >
+                                <Typography 
+                                    variant="h3" 
+                                    fontWeight="bold" 
+                                    color="primary"
+                                    mb={2}
+                                >
+                                    Skills
+                                </Typography>
+                                {(userProfile.workSkills || []).map((skill, index) => (
+                                    <Box 
+                                        key={index} 
+                                        display="flex" 
+                                        justifyContent="space-between" 
+                                        mb={2}
+                                        className={styles.workSkillItem}
+                                    >
+                                        <Box>
+                                            <Typography variant="body1">
+                                                {skill.title}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body2">
+                                            {skill.description}
+                                        </Typography>
+                                    </Box>
+                                ))}
+
+                                {canEditProfile && (
+                                    <Button 
+                                        onClick={() => setIsEditWorkSkillsPopupOpen(true)} variant="contained" 
+                                        color="primary"
+                                        className={`${styles.editProfileBtn} tertiary small`}
+                                    >
+                                        Edit Skills
+                                    </Button>
+                                )}
+                            </Box>
+                            </>
                         )}
                 </Box>
 
@@ -369,6 +445,57 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userProfile, canEditProfi
                     </Button>
                     <Button onClick={handleSaveWorkExperience} color="primary" variant="contained">
                         Save Work Experience
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Skills Dialog */}
+            <Dialog
+                open={isEditWorkSkillsPopupOpen}
+                onClose={() => setIsEditWorkSkillsPopupOpen(false)}
+                maxWidth="sm"
+            >
+                <DialogTitle>Edit Work Experience</DialogTitle>
+                <DialogContent>
+                    {workSkills.map((skill, index) => (
+                        <Box
+                            key={index}
+                            display="flex"
+                            alignItems="center"
+                            gap={2}
+                            mb={2}
+                            className={styles.workExperienceEditItem}
+                        >
+                            <TextField
+                                label="Skill Title"
+                                value={skill.title}
+                                onChange={(e) => handleSkillChange(index, 'title', e.target.value)}
+                                variant="outlined"
+                                size="small"
+                            />
+                            <TextField
+                                label="Skill Length"
+                                value={skill.description}
+                                onChange={(e) => handleSkillChange(index, 'description', e.target.value)}
+                                variant="outlined"
+                                size="small"
+                            />
+                            <IconButton
+                                onClick={() => handleDeleteSkill(index)}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Box>
+                    ))}
+                    <Button onClick={handleAddSkill} variant="outlined" color="primary">
+                        Add Skill
+                    </Button>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsEditWorkSkillsPopupOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSaveWorkSkills} color="primary" variant="contained">
+                        Save Skills
                     </Button>
                 </DialogActions>
             </Dialog>

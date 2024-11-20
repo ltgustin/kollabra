@@ -17,7 +17,7 @@ export default function JobCard({
     const userProfile = useUserProfile();
 
     useEffect(() => {
-        if (userProfile) {
+        if (userProfile && userProfile.type === "Creative") {
             setIsFavorited(userProfile.favorites.includes(job.id));
         }
     }, [userProfile, job.id]);

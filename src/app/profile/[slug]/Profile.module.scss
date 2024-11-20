@@ -25,7 +25,8 @@
     margin-top:2rem;
 }
 
-.workExperienceItem {
+.workExperienceItem,
+.workSkillItem {
     text-align:left;
     gap:1rem;
 
@@ -38,7 +39,8 @@
     }
 }
 
-.workExperienceEditItem {
+.workExperienceEditItem,
+.workSkillEditItem {
     margin-top:1rem;
 
     > div {

@@ -64,8 +64,12 @@ const CompanyJobs = ({
                 {loading ? (
                     <Skeleton variant="rectangular" height={118} />
                 ) : (
-                    jobItems.filter(job => job.status === 'published').length > 0 ? (
-                        jobItems.filter(job => job.status === 'published').map((job) => (
+                    (canEditProfile ? jobItems : jobItems.filter(job => job.status === 'published'))
+                        .sort((a, b) => b.updatedAt - a.updatedAt)
+                        .length > 0 ? (
+                        (canEditProfile ? jobItems : jobItems.filter(job => job.status === 'published'))
+                            .sort((a, b) => b.updatedAt - a.updatedAt)
+                            .map((job) => (
                             <JobCard 
                                 key={job.id} 
                                 job={job} 
