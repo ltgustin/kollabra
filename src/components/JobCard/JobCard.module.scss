@@ -41,3 +41,15 @@
         }
     }
 }
+
+.jobStatus {
+    font-weight:bold;
+}
+
+.draftStatus span {
+    color: gray;
+}
+
+.publishedStatus span {
+    color: green;
+}

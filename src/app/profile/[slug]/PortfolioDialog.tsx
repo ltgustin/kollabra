@@ -118,10 +118,9 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
             return; // Exit the function if no image is uploaded
         }
 
-        console.log(userProfile);
-
         const portfolioData = {
             userId: userProfile.slug,
+            uid: user.uid,
             title: newItem.title,
             brand: newItem.brand,
             description: newItem.description,
@@ -148,6 +147,7 @@ const PortfolioDialog: React.FC<PortfolioDialogProps> = ({
                     prevItems.map(item => item.id === editingItem.id ? { ...item, ...portfolioData } : item)
                 );
                 setSnackbarMessage('Portfolio item updated successfully!');
+                setSnackbarType('success');
             } else {
                 // Fetch the current highest order
                 const portfolioRef = collection(db, 'portfolio');

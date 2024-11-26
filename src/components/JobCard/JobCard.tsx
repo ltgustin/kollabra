@@ -22,6 +22,8 @@ export default function JobCard({
         }
     }, [userProfile, job.id]);
 
+    console.log(canEditProfile);
+
     const toggleFavorite = async () => {
         if (!userProfile) return;
 
@@ -81,8 +83,12 @@ export default function JobCard({
                     alignItems="flex-end"
                     gap={1}
                 >
-                    {canEditProfile ? (
-                        <Typography variant="body2">Status: {job.status}</Typography>
+                    {
+                    canEditProfile ? (
+                        <Typography 
+                            className={`${styles.jobStatus} ${job.status === 'draft' ? styles.draftStatus : styles.publishedStatus}`}
+                        variant="body2"
+                        >Status: <span>{job.status}</span></Typography>
                     ) : (
                         <Button onClick={toggleFavorite}>
                             {isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}

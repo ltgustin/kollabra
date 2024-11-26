@@ -32,7 +32,7 @@ const CreativePortfolio = ({
 
             // Log the response for debugging
             const responseData = await response.json();
-            console.log('Response from API:', responseData);
+            // console.log('Response from API:', responseData);
 
             if (!response.ok) {
                 throw new Error(`Failed to save order: ${responseData.error || 'Unknown error'}`);
@@ -71,8 +71,11 @@ const CreativePortfolio = ({
             // Send the new order to the backend
             try {
                 await savePortfolioOrder(newPortfolioItems);
+                setSnackbarMessage('Portfolio order updated successfully!');
+                setSnackbarType('success');
             } catch (error) {
-                console.log("Failed to save the new order:", error);
+                setSnackbarMessage('Failed to save the new order.');
+                setSnackbarType('error');
             }
         }
     };

@@ -117,6 +117,7 @@ const EditJob = ({ params }: JobProps) => {
             status: 'draft',
             updatedAt: new Date(),
         });
+        setJob(prevJob => ({ ...prevJob, status: 'draft' }));
         setSnackbarMessage('Job saved successfully');
         setSnackbarType('success');
         setSnackbarOpen(true);
@@ -130,6 +131,7 @@ const EditJob = ({ params }: JobProps) => {
             status: 'published',
             updatedAt: new Date(),
         });
+        setJob(prevJob => ({ ...prevJob, status: 'published' }));
         setSnackbarMessage('Job published successfully');
         setSnackbarType('success');
         setSnackbarOpen(true);
@@ -195,8 +197,14 @@ const EditJob = ({ params }: JobProps) => {
             <Sidebar>
                 {canEditProfile() ? (
                     <>
-                        <FormControl
-                            className={styles.sidebarFormControl}
+                        <Box
+                            className={`${styles.jobStatus} ${job.status === 'draft' ? styles.draftStatus : styles.publishedStatus}`}
+                        >
+                            Post Status: <span>{job.status}</span>
+                        </Box>
+                        
+                            <FormControl
+                                className={styles.sidebarFormControl}
                             component="fieldset"
                             fullWidth
                         >
@@ -286,13 +294,13 @@ const EditJob = ({ params }: JobProps) => {
                                 onClick={handleSave}
                                 className="tertiary small"
                             >
-                                Save as Draft
+                                {job.status === 'draft' ? 'Save' : 'Switch to Draft'}
                             </Button>
                             <Button
                                 variant="contained"
                                 onClick={handleSaveAndPublish}
                             >
-                                Save and Publish
+                                {job.status === 'draft' ? 'Save and Publish' : 'Save'}
                             </Button>
                         </Box>
                     </>

@@ -11,6 +11,25 @@
     border-radius:1rem;
 }
 
+.jobStatus {
+    font-size:1.1rem;
+    margin-bottom:1rem;
+    font-weight:bold;
+
+    span {
+        margin-left:0.5rem;
+        font-weight:normal;
+    }
+}
+
+.draftStatus span {
+    color: gray;
+}
+
+.publishedStatus span {
+    color: green;
+}
+
 .jobTitle,
 .jobTitleValue {
     font-size:4rem !important;

@@ -48,6 +48,14 @@ h1 {
     font-size: clam(3.2rem,5rem);
 }
 
+.pageTitle {
+    font-size: clam(2rem,2.4rem);
+    font-weight:400;
+    max-width: 1500px;
+    margin:2rem auto 1rem auto;
+    padding:0 3rem 0 4rem;
+}
+
 h2,h3,h4,h5,h6 {
     font-family: $font;
     margin-bottom:rem(20);
